@@ -20,10 +20,10 @@ CONECT    5    7
 CONECT    6    8
 CONECT    7    8
 
-CONECT    1    4
-CONECT    1    6
-CONECT    1    7
-CONECT    4    6
-CONECT    4    7
-CONECT    6    7
+CONECT    2    3
+CONECT    2    5
+CONECT    2    8
+CONECT    3    5
+CONECT    3    8
+CONECT    5    8
 END
