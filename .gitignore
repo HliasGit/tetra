@@ -1,1 +1,8 @@
 movie*
+data
+__pycache__
+build
+.vscode
+*.pdb
+*.txt
+*.bin
