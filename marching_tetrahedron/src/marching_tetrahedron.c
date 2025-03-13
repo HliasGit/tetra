@@ -14,9 +14,9 @@ void read_file(const char* file_name, Dimensions *dim, dim_t **tensor){
     fread(&(dim->y_dim), sizeof(size_t), 1, fptr);
     fread(&(dim->z_dim), sizeof(size_t), 1, fptr);
 
-    printf("x_dim: %d\n", dim->x_dim);
-    printf("y_dim: %d\n", dim->y_dim);
-    printf("z_dim: %d\n", dim->z_dim);
+    verbose_print("x_dim: %d\n", dim->x_dim);
+    verbose_print("y_dim: %d\n", dim->y_dim);
+    verbose_print("z_dim: %d\n", dim->z_dim);
 
     *tensor = (dim_t*)malloc(sizeof(dim_t)*dim->x_dim*dim->y_dim*dim->z_dim);
     
@@ -24,7 +24,7 @@ void read_file(const char* file_name, Dimensions *dim, dim_t **tensor){
         for (int j=0; j<dim->y_dim; j++){
             for (int i=0; i<dim->x_dim; i++){
                 fread(&(*tensor)[i + dim->x_dim*j + k*dim->x_dim*dim->y_dim], sizeof(dim_t), 1, fptr);
-                // printf("%f\n", (*tensor)[i + dim->x_dim*j + k + dim->x_dim*dim->y_dim]);
+                // verbose_print("%f\n", (*tensor)[i + dim->x_dim*j + k + dim->x_dim*dim->y_dim]);
             }
         }
     }
@@ -39,7 +39,7 @@ void normalize_grid(Dimensions *dim, dim_t **grid, dim_t threshold){
     for(size_t k=0; k<dim->z_dim; k++){
         for (size_t j=0; j<dim->y_dim; j++){
             for (size_t i=0; i<dim->x_dim; i++){
-                // printf("val: %f\n", *grid[i + dim->x_dim*j + k + dim->x_dim*dim->y_dim]);
+                // verbose_print("val: %f\n", *grid[i + dim->x_dim*j + k + dim->x_dim*dim->y_dim]);
                 (*grid)[i + dim->x_dim*j + k*dim->x_dim*dim->y_dim] -= threshold;
             }
         }
@@ -58,19 +58,20 @@ void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition,
                 // check if every vertex in the cube is F(x,y,x) - C < threshold and in case skip it 
                 for (int tetra = 0; tetra<20; tetra+=4){ // for every tetrahedron in a cube
                     coordinates = malloc(4*sizeof(CubeVertex));
-                    printf("Tetra: %d\n", tetra/4+1);
+                    verbose_print("Tetra: %d\n", tetra/4+1);
                     for (int idx=tetra; idx<tetra+4; idx ++){ // for every point in a tetrahedra
                         int point = cube_decomposition[idx];
-                        // printf("point coord (%d,%d,%d): %d\n",
+                        // verbose_print("point coord (%d,%d,%d): %d\n",
                         //             i, j, k, point);
 
                         // find the global tetrahedra coordinates.
                         find_coordinates(idx-tetra, point, i, j, k, &coordinates);
-                        printf("    Point: %d\n", point);
-                        printf("        coord x: %d\n", coordinates[idx-tetra].x);
-                        printf("        coord y: %d\n", coordinates[idx-tetra].y);
-                        printf("        coord z: %d\n", coordinates[idx-tetra].z);
+                        verbose_print("    Point: %d\n", point);
+                        verbose_print("        coord x: %d\n", coordinates[idx-tetra].x);
+                        verbose_print("        coord y: %d\n", coordinates[idx-tetra].y);
+                        verbose_print("        coord z: %d\n", coordinates[idx-tetra].z);
 
+                        // get the # neg, # zero, # pos for each tetrahedron in the stack
                         push_into_stack(&stack,
                                         (*grid)[coordinates[idx-tetra].x + 
                                                 coordinates[idx-tetra].y*dim->x_dim + 
@@ -81,15 +82,49 @@ void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition,
 
                     }
                     
-                    print_stack(stack);
+                    // Print for debug
+                    verbose_call(print_stack(stack));
 
-                    
-                    
-                    
-                    // get the # neg, # zero, # pos for each tetrahedron
                     // get the action value
-                    // get the grid points
-                    // build the triangle 
+                    int action_value = get_action_value(stack);
+                    
+                    // Print for debug
+                    verbose_print("        action val: %d\n", action_value);
+                    
+                    // get the pairs
+                    int *pairs = get_pairs(action_value);
+                    
+                    // Print pairs for debug
+                    if(action_value!=0){
+                        verbose_print("    Pairs: ");
+                        for (int p = 0; p < (action_value == 7 ? 12 : 6); p += 2) {
+                            verbose_print("(%d, %d) ", pairs[p], pairs[p + 1]);
+                        }
+                        verbose_print("\n");
+                        // build the triangle 
+                        Triangle *triangle = make_triangle(stack, pairs);
+                        
+                        (*count)++;
+                        printf("Triangle #%d\n", *count);
+                        printf("    vertex 1:\n");
+                        printf("        x: %f\n", triangle->v1->x);
+                        printf("        y: %f\n", triangle->v1->y);
+                        printf("        z: %f\n", triangle->v1->z);
+                        printf("    vertex 2:\n");
+                        printf("        x: %f\n", triangle->v2->x);
+                        printf("        y: %f\n", triangle->v2->y);
+                        printf("        z: %f\n", triangle->v2->z);
+                        printf("    vertex 3:\n");
+                        printf("        x: %f\n", triangle->v3->x);
+                        printf("        y: %f\n", triangle->v3->y);
+                        printf("        z: %f\n", triangle->v3->z);
+
+                        print_to_file(triangle, count);
+                    }
+                    
+                    
+
+                    free(pairs);
                     free_stack(&stack);
                     free(coordinates);
                 }
@@ -107,7 +142,7 @@ void print_grid(const Dimensions *dim, const dim_t *grid){
     for (int k=0; k<dim->z_dim; k++){
         for (int j=0; j<dim->y_dim; j++){
             for (int i=0; i<dim->x_dim; i++){
-                printf("%f\n", grid[i + dim->x_dim*j + k*dim->x_dim*dim->y_dim]);
+                verbose_print("%f\n", grid[i + dim->x_dim*j + k*dim->x_dim*dim->y_dim]);
             }
         }
     }
@@ -128,15 +163,15 @@ void find_coordinates(int idx, const int point, const size_t i, const size_t j, 
     }
 
     if (j%2 == 0){
-        one_apex[1] = i;
+        one_apex[1] = j;
     } else {
-        one_apex[1] = i+1;
+        one_apex[1] = j+1;
     }
 
     if (k%2 == 0){
-        one_apex[2] = i;
+        one_apex[2] = k;
     } else {
-        one_apex[2] = i+1;
+        one_apex[2] = k+1;
     }
 
     two_apex[0] = 2*i+1-one_apex[0];
@@ -223,12 +258,168 @@ void free_stack(StackNode **start){
 }
 
 void print_stack(StackNode *start){
-    printf("    Stack content:\n");
+    verbose_print("    Stack content:\n");
     while(start != NULL){
-        printf("        Coord: (%d, %d, %d); Val: %f\n",    start->coordinate.x,
+        verbose_print("        Coord: (%d, %d, %d); Val: %f\n",    start->coordinate.x,
                                                             start->coordinate.y,
                                                             start->coordinate.z,
                                                             start->owned_value);
         start = start->next;
     }
+}
+
+int get_action_value(StackNode *start){
+    int val[3] = {0,0,0};
+
+    while(start != NULL){
+        if(start->owned_value < 0){
+            val[0]++;
+        }
+        if(start->owned_value == 0){
+            val[1]++;
+        }
+        if(start->owned_value > 0){
+            val[2]++;
+        }
+        start = start->next;
+    }
+
+    if(val[0]==0 || (val[0] == 2 && val[1] == 2) || (val[0]== 3 && val[1] == 1) || val[0] == 4){
+        return 0;
+    }
+
+    if(val[0] == 1){
+        if(val[1] == 0)
+            return 1;
+        if(val[1] == 1)
+            return 2;
+        if(val[1] == 2)
+            return 3;
+        if(val[1] == 3)
+            return 4;
+    }
+
+    if(val[0] == 2){
+        if(val[1] == 0)
+            return 7;
+        if(val[1] == 1)
+            return 5;
+    }
+
+    if(val[0] == 3)
+        return 6;
+}
+
+int *get_pairs(int action_val){    
+    int *res = NULL;
+    switch (action_val)
+    {
+    
+    case 0:
+        return res;
+    case 1:
+        res = malloc(6 * sizeof(int));
+        res[0] = 1; res[1] = 2; res[2] = 1; res[3] = 3; res[4] = 1; res[5] = 4;
+        return res;
+    case 2:
+        res = malloc(6 * sizeof(int));
+        res[0] = 2; res[1] = 2; res[2] = 1; res[3] = 3; res[4] = 1; res[5] = 4;
+        return res;
+    case 3:
+        res = malloc(6 * sizeof(int));
+        res[0] = 2; res[1] = 2; res[2] = 3; res[3] = 3; res[4] = 1; res[5] = 4;
+        return res;
+    case 4:
+        res = malloc(6 * sizeof(int));
+        res[0] = 2; res[1] = 2; res[2] = 3; res[3] = 3; res[4] = 4; res[5] = 4;
+        return res;
+    case 5:
+        res = malloc(6 * sizeof(int));
+        res[0] = 1; res[1] = 4; res[2] = 2; res[3] = 4; res[4] = 3; res[5] = 3;
+        return res;
+    case 6:
+        res = malloc(6 * sizeof(int));
+        res[0] = 1; res[1] = 4; res[2] = 2; res[3] = 4; res[4] = 3; res[5] = 4;
+        return res;
+    case 7:
+        res = malloc(12 * sizeof(int));
+        res[0] = 1; res[1] = 4; res[2] = 2; res[3] = 4; res[4] = 1; res[5] = 3; res[6] = 2; res[7] = 4; res[8] = 2; res[9] = 3; res[10] = 1; res[11] = 3;
+        return res;
+    
+    default:
+        fprintf(stderr, "Error in chooisng the pairs");
+        break;
+    }
+}
+
+Triangle *make_triangle(StackNode *stack, int *pairs){
+
+    Triangle *triangle = (Triangle *)malloc(sizeof(Triangle));
+
+    verbose_print("TRIANGLE:\n");
+
+    triangle->v1 = (TriangleVertex *)malloc(sizeof(TriangleVertex));
+    triangle->v2 = (TriangleVertex *)malloc(sizeof(TriangleVertex));
+    triangle->v3 = (TriangleVertex *)malloc(sizeof(TriangleVertex));
+
+    for(int idx=0; idx<6; idx+=2){ // TODO: MANAGE CASE OF 6 PAIRS (12 NUMBERS)
+        CubeVertex *point1 = get_coordinate_by_idx(stack, pairs[idx]-1);
+        CubeVertex *point2 = get_coordinate_by_idx(stack, pairs[idx+1]-1);
+
+        if(idx==0){
+            triangle->v1->x = (dim_t)(point2->x+point1->x)/2;
+            triangle->v1->y = (dim_t)(point2->y+point1->y)/2;
+            triangle->v1->z = (dim_t)(point2->z+point1->z)/2;
+        }
+        if(idx==2){
+            triangle->v2->x = (dim_t)(point2->x+point1->x)/2;
+            triangle->v2->y = (dim_t)(point2->y+point1->y)/2;
+            triangle->v2->z = (dim_t)(point2->z+point1->z)/2;
+        }
+        if(idx==4){
+            triangle->v3->x = (dim_t)(point2->x+point1->x)/2;
+            triangle->v3->y = (dim_t)(point2->y+point1->y)/2;
+            triangle->v3->z = (dim_t)(point2->z+point1->z)/2;
+        }
+    }
+
+    return triangle;
+}
+
+CubeVertex *get_coordinate_by_idx(StackNode *start, int idx){
+    int i=0;
+    StackNode *ptr = start;
+    while(i<idx){
+        i++;
+        if(ptr == NULL){
+            fprintf(stderr, "Stack is smaller than idx\n");
+            exit(-1);
+        }
+        verbose_print("Iter for the coordinates\n");
+        ptr = ptr->next;
+    }
+
+    verbose_print("Found\n");
+    return &ptr->coordinate;
+}
+
+void print_to_file(Triangle *triangle, int *count){
+    FILE *fptr;
+
+    // ATOM      1 0    PSE A   0      60.000  58.000  46.500  1.00  1.00           C  
+    char str[500];
+    snprintf(str, sizeof(str), "ATOM  %5d 0    PSE A   0      %6.3f  %6.3f  %6.3f  1.00  1.00           C\n", 
+            *count*3+0, triangle->v1->x, triangle->v1->y, triangle->v1->z);
+    snprintf(str + strlen(str), sizeof(str) - strlen(str), "ATOM  %5d 0    PSE A   0      %6.3f  %6.3f  %6.3f  1.00  1.00           C\n", 
+            *count*3+1, triangle->v2->x, triangle->v2->y, triangle->v2->z);
+    snprintf(str + strlen(str), sizeof(str) - strlen(str), "ATOM  %5d 0    PSE A   0      %6.3f  %6.3f  %6.3f  1.00  1.00           C\n", 
+            *count*3+2, triangle->v3->x, triangle->v3->y, triangle->v3->z);
+
+    if (*count == 1) {
+        fptr = fopen("write.pdb", "w");
+    } else {
+        fptr = fopen("write.pdb", "a");
+    }
+    fprintf(fptr, "%s", str);
+    fclose(fptr);
 }
