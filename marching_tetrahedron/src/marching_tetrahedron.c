@@ -9,7 +9,20 @@ void read_file(const char* file_name, Dimensions *dim, dim_t **tensor){
         fprintf(stderr, "Not able to open the file\n");
         exit(-1);
     }
+
+    double dx;
+    double dy;
+    double dz;
+    double origin_x;
+    double origin_y;
+    double origin_z;
     
+    fread(&(dx), sizeof(double), 1, fptr);
+    fread(&(dy), sizeof(double), 1, fptr);
+    fread(&(dz), sizeof(double), 1, fptr);
+    fread(&(origin_x), sizeof(double), 1, fptr);
+    fread(&(origin_y), sizeof(double), 1, fptr);
+    fread(&(origin_z), sizeof(double), 1, fptr);
     fread(&(dim->x_dim), sizeof(size_t), 1, fptr);
     fread(&(dim->y_dim), sizeof(size_t), 1, fptr);
     fread(&(dim->z_dim), sizeof(size_t), 1, fptr);
@@ -20,17 +33,14 @@ void read_file(const char* file_name, Dimensions *dim, dim_t **tensor){
 
     *tensor = (dim_t*)malloc(sizeof(dim_t)*dim->x_dim*dim->y_dim*dim->z_dim);
     
-    for (int k=0; k<dim->z_dim; k++){
+    for (int i=0; i<dim->x_dim; i++){
         for (int j=0; j<dim->y_dim; j++){
-            for (int i=0; i<dim->x_dim; i++){
-                fread(&(*tensor)[i + dim->x_dim*j + k*dim->x_dim*dim->y_dim], sizeof(dim_t), 1, fptr);
+            for (int k=0; k<dim->z_dim; k++){
+                fread(&(*tensor)[k + j*dim->y_dim + i*dim->y_dim*dim->z_dim], sizeof(dim_t), 1, fptr);
                 // verbose_print("%f\n", (*tensor)[i + dim->x_dim*j + k + dim->x_dim*dim->y_dim]);
             }
         }
     }
-
-
-
     fclose(fptr);
 }
 

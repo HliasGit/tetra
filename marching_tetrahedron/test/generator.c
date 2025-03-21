@@ -12,26 +12,43 @@ int main(){
         printf("null ptr");
     }
 
+    double dx = 50;
+    double dy = 50;
+    double dz = 50;
+    double origin_x = 50;
+    double origin_y = 50;
+    double origin_z = 50;
     size_t x_d = 50;
     size_t y_d = 50;
     size_t z_d = 50;
 
+    fwrite(&dx, sizeof(double), 1, fptr);
+    fwrite(&dy, sizeof(double), 1, fptr);
+    fwrite(&dz, sizeof(double), 1, fptr);
+    fwrite(&origin_x, sizeof(double), 1, fptr);
+    fwrite(&origin_y, sizeof(double), 1, fptr);
+    fwrite(&origin_z, sizeof(double), 1, fptr);
     fwrite(&x_d, sizeof(size_t), 1, fptr);
     fwrite(&y_d, sizeof(size_t), 1, fptr);
     fwrite(&z_d, sizeof(size_t), 1, fptr);
 
     float var = 0;
 
-    for (int z=0; z<z_d; z++){
+    for (int x=0; x<x_d; x++){
         for (int y=0; y<y_d; y++){
-            for (int x=0; x<x_d; x++){
+            for (int z=0; z<z_d; z++){
                 // if(x == 1 && y == 1 && z == 1){
                 //     var = 1;
                 //     printf("PRINTATO\n");
                 // } else {
                 //     var = 0;
                 // }
-                float distance = sqrt((x - x_d / 2) * (x - x_d / 2) + (y - y_d / 2) * (y - y_d / 2) + (z - z_d / 2) * (z - z_d / 2));
+                // float distance = sqrt((x - x_d / 2) * (x - x_d / 2) + (y - y_d / 2) * (y - y_d / 2) + (z - z_d / 2) * (z - z_d / 2));
+                float dx = fabs(x - x_d / 2);
+                float dy = fabs(y - y_d / 2);
+                float dz = fabs(z - z_d / 2);
+                float distance = fmax(fmax(dx, dy), dz);
+                
                 if (distance <= 5) {
                     var = 1;
                 } else {
