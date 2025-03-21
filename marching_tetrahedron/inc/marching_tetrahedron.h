@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <stdbool.h>
 
 typedef float dim_t;    // type of the scalar field values
 typedef float coord_t;  // type for the coordinates (float or double)
@@ -57,8 +58,10 @@ void free_stack(StackNode **start);
 void print_stack(StackNode *start);
 int get_action_value(StackNode *start);
 int *get_pairs(int action_val);
-Triangle *make_triangle(StackNode *stack, int *pairs);
+Triangle *make_triangle(StackNode *stack, int *pairs, bool two_triangles);
 CubeVertex *get_coordinate_by_idx(StackNode *start, int idx);
 void print_to_file(Triangle *triangle,int* count);
+void print_connections(Triangle *triangle, int*count);
+void merge_files(char *atoms, char* conn);
 
 #endif //TETRA

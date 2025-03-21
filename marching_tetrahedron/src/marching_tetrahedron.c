@@ -112,7 +112,7 @@ void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition,
                         }
                         verbose_print("\n");
                         // build the triangle 
-                        Triangle *triangle = make_triangle(stack, pairs);
+                        Triangle *triangle = make_triangle(stack, pairs, false);
                         
                         (*count)++;
                         printf("Triangle #%d\n", *count);
@@ -130,6 +130,29 @@ void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition,
                         printf("        z: %f\n", triangle->v3->z);
 
                         print_to_file(triangle, count);
+                        print_connections(triangle, count);
+
+                        if(action_value==7 ? true:false){
+                            Triangle *triangle = make_triangle(stack, pairs, action_value==7 ? true:false);
+                        
+                            (*count)++;
+                            printf("Triangle #%d\n", *count);
+                            printf("    vertex 1:\n");
+                            printf("        x: %f\n", triangle->v1->x);
+                            printf("        y: %f\n", triangle->v1->y);
+                            printf("        z: %f\n", triangle->v1->z);
+                            printf("    vertex 2:\n");
+                            printf("        x: %f\n", triangle->v2->x);
+                            printf("        y: %f\n", triangle->v2->y);
+                            printf("        z: %f\n", triangle->v2->z);
+                            printf("    vertex 3:\n");
+                            printf("        x: %f\n", triangle->v3->x);
+                            printf("        y: %f\n", triangle->v3->y);
+                            printf("        z: %f\n", triangle->v3->z);
+
+                            print_to_file(triangle, count);
+                            print_connections(triangle, count);
+                        }
                     }
                     
                     
@@ -362,7 +385,7 @@ int *get_pairs(int action_val){
     }
 }
 
-Triangle *make_triangle(StackNode *stack, int *pairs){
+Triangle *make_triangle(StackNode *stack, int *pairs, bool two_triangles){
 
     Triangle *triangle = (Triangle *)malloc(sizeof(Triangle));
 
@@ -392,6 +415,31 @@ Triangle *make_triangle(StackNode *stack, int *pairs){
             triangle->v3->z = (dim_t)(point2->z+point1->z)/2;
         }
     }
+
+    if (two_triangles)
+    {
+        for(int idx=6; idx<12; idx+=2){ // TODO: MANAGE CASE OF 6 PAIRS (12 NUMBERS)
+            CubeVertex *point1 = get_coordinate_by_idx(stack, pairs[idx]-1);
+            CubeVertex *point2 = get_coordinate_by_idx(stack, pairs[idx+1]-1);
+    
+            if(idx==6){
+                triangle->v1->x = (dim_t)(point2->x+point1->x)/2;
+                triangle->v1->y = (dim_t)(point2->y+point1->y)/2;
+                triangle->v1->z = (dim_t)(point2->z+point1->z)/2;
+            }
+            if(idx==8){
+                triangle->v2->x = (dim_t)(point2->x+point1->x)/2;
+                triangle->v2->y = (dim_t)(point2->y+point1->y)/2;
+                triangle->v2->z = (dim_t)(point2->z+point1->z)/2;
+            }
+            if(idx==10){
+                triangle->v3->x = (dim_t)(point2->x+point1->x)/2;
+                triangle->v3->y = (dim_t)(point2->y+point1->y)/2;
+                triangle->v3->z = (dim_t)(point2->z+point1->z)/2;
+            }
+        }
+    }
+    
 
     return triangle;
 }
@@ -431,5 +479,63 @@ void print_to_file(Triangle *triangle, int *count){
         fptr = fopen("write.pdb", "a");
     }
     fprintf(fptr, "%s", str);
+
+    
     fclose(fptr);
+}
+
+void print_connections(Triangle *triangle, int*count){
+    FILE *fptr;
+
+    // ATOM      1 0    PSE A   0      60.000  58.000  46.500  1.00  1.00           C  
+    char str[500];
+    if (*count*3+0 > *count*3+1) {
+        snprintf(str, sizeof(str), "CONECT%5d%5d\n", 
+                *count*3+1, *count*3+0);
+    } else {
+        snprintf(str, sizeof(str), "CONECT%5d%5d\n", 
+                *count*3+0, *count*3+1);
+    }
+
+    if (*count*3+1 > *count*3+2) {
+        snprintf(str + strlen(str), sizeof(str) - strlen(str), "CONECT%5d%5d\n", 
+                *count*3+2, *count*3+1);
+    } else {
+        snprintf(str + strlen(str), sizeof(str) - strlen(str), "CONECT%5d%5d\n", 
+                *count*3+1, *count*3+2);
+    }
+
+    if (*count*3+2 > *count*3+0) {
+        snprintf(str + strlen(str), sizeof(str) - strlen(str), "CONECT%5d%5d\n", 
+                *count*3+0, *count*3+2);
+    } else {
+        snprintf(str + strlen(str), sizeof(str) - strlen(str), "CONECT%5d%5d\n", 
+                *count*3+2, *count*3+0);
+    }
+
+    if (*count == 1) {
+        fptr = fopen("conn.pdb", "w");
+    } else {
+        fptr = fopen("conn.pdb", "a");
+    }
+    fprintf(fptr, "%s", str);
+    fclose(fptr);
+}
+
+void merge_files(char *atoms, char* conn){
+    FILE *f_atoms = fopen(atoms, "a");
+    FILE *f_conn = fopen(conn, "r");
+
+    if (f_atoms == NULL || f_conn == NULL) {
+        fprintf(stderr, "Error opening files for merging\n");
+        exit(-1);
+    }
+
+    char buffer[1024];
+    while (fgets(buffer, sizeof(buffer), f_conn) != NULL) {
+        fputs(buffer, f_atoms);
+    }
+
+    fclose(f_atoms);
+    fclose(f_conn);
 }
