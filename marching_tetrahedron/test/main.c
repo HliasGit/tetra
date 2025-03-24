@@ -1,3 +1,6 @@
+#include "global.h"
+#include "triangles.h"
+#include "utils.h"
 #include "marching_tetrahedron.h"
 
 int main(){
@@ -20,7 +23,8 @@ int main(){
 
     void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t);
 
-    func_ptr = &midpoint_interpol;
+    func_ptr = &linear_interpol;
+
 
     int count = 0;
     marching_tetrahedra(&dim, &grid, cube_decomposition, &count, threshold, origin, func_ptr);

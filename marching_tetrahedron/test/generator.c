@@ -1,4 +1,4 @@
-#include "marching_tetrahedron.h"
+#include "global.h"
 
 int main(){
     FILE *fptr;
@@ -18,9 +18,9 @@ int main(){
     double origin_x = 50;
     double origin_y = 50;
     double origin_z = 50;
-    size_t x_d = 50;
-    size_t y_d = 50;
-    size_t z_d = 50;
+    size_t x_d = 150;
+    size_t y_d = 150;
+    size_t z_d = 150;
 
     fwrite(&dx, sizeof(double), 1, fptr);
     fwrite(&dy, sizeof(double), 1, fptr);
@@ -43,13 +43,13 @@ int main(){
                 // } else {
                 //     var = 0;
                 // }
-                // float distance = sqrt((x - x_d / 2) * (x - x_d / 2) + (y - y_d / 2) * (y - y_d / 2) + (z - z_d / 2) * (z - z_d / 2));
-                float dx = fabs(x - x_d / 2);
-                float dy = fabs(y - y_d / 2);
-                float dz = fabs(z - z_d / 2);
-                float distance = fmax(fmax(dx, dy), dz);
+                float distance = sqrt((x - x_d / 2) * (x - x_d / 2) + (y - y_d / 2) * (y - y_d / 2) + (z - z_d / 2) * (z - z_d / 2));
+                // float dx = fabs(x - x_d / 2);
+                // float dy = fabs(y - y_d / 2);
+                // float dz = fabs(z - z_d / 2);
+                // float distance = fmax(fmax(dx, dy), dz);
                 
-                if (distance <= 5) {
+                if (distance <= 7) {
                     var = 1;
                 } else {
                     var = 0;
@@ -58,5 +58,6 @@ int main(){
             }
         }
     }
+
     fclose(fptr);
 }
