@@ -48,20 +48,23 @@ typedef struct StackNode{
     struct StackNode *next;
 } StackNode;
 
-void read_file(const char* file_name, Dimensions *dim, dim_t **tensor);
+void read_file(const char* file_name, Dimensions *dim, dim_t **tensor, double *origin);
 void normalize_grid(Dimensions *dim, dim_t **grid, dim_t threshold);
-void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition, int *count);
+void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition, int *count, dim_t threshold, double *origin, void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t));
 void print_grid(const Dimensions *dim, const dim_t *grid);
 void find_coordinates(int idx, const int point, const size_t i, const size_t j, const size_t k, CubeVertex **coordinates);
 void push_into_stack(StackNode **start, dim_t value, CubeVertex vert);
 void free_stack(StackNode **start);
 void print_stack(StackNode *start);
-int get_action_value(StackNode *start);
+int get_action_value(StackNode *start, dim_t threshold);
 int *get_pairs(int action_val);
-Triangle *make_triangle(StackNode *stack, int *pairs, bool two_triangles);
+Triangle *make_triangle(StackNode *stack, int *pairs, bool two_triangles, dim_t threshold, void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t));
 CubeVertex *get_coordinate_by_idx(StackNode *start, int idx);
-void print_to_file(Triangle *triangle,int* count);
+dim_t *get_value_by_idx(StackNode *start, int idx);
+void print_to_file(Triangle *triangle,int* count, double *origin);
 void print_connections(Triangle *triangle, int*count);
 void merge_files(char *atoms, char* conn);
+void midpoint_interpol(TriangleVertex *vtx,CubeVertex *point1, CubeVertex *point2, dim_t *val1, dim_t *val2, dim_t threshold);
+void linear_interpol(TriangleVertex *vtx,CubeVertex *point1, CubeVertex *point2, dim_t *val1, dim_t *val2, dim_t threshold);
 
 #endif //TETRA
