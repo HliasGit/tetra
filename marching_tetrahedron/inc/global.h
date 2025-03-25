@@ -15,8 +15,8 @@
 #include <math.h>
 #include <stdbool.h>
 
-typedef float dim_t;    // type of the scalar field values
-typedef float coord_t;  // type for the coordinates (float or double)
+typedef double dim_t;    // type of the scalar field values
+typedef double coord_t;  // type for the coordinates (float or double)
 
 typedef struct dimensions{
     size_t x_dim;
@@ -48,14 +48,17 @@ typedef struct StackNode{
     struct StackNode *next;
 } StackNode;
 
-typedef struct triangleNode{
-    Triangle data;
+typedef struct TriangleNode{
+    int vert1;
+    int vert2;
+    int vert3;
     struct TriangleNode *next;
 } TriangleNode;
 
-typedef struct vertexNode{
-    TriangleVertex vertex;
+typedef struct VertexNode{
+    TriangleVertex *vertex;
     struct VertexNode *next;
+    int idx;
 } VertexNode;
 
 typedef struct Polyhedra{

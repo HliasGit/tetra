@@ -32,21 +32,27 @@ void read_file(const char* file_name, Dimensions *dim, dim_t **tensor, double *o
     fread(&(dim->y_dim), sizeof(size_t), 1, fptr);
     fread(&(dim->z_dim), sizeof(size_t), 1, fptr);
 
-    verbose_print("x_dim: %d\n", dim->x_dim);
-    verbose_print("y_dim: %d\n", dim->y_dim);
-    verbose_print("z_dim: %d\n", dim->z_dim);
+    printf("x_dim: %d\n", dim->x_dim);
+    printf("y_dim: %d\n", dim->y_dim);
+    printf("z_dim: %d\n", dim->z_dim);
 
     printf("Origin:\n");
     printf("    x: %f\n", origin[0]);
     printf("    y: %f\n", origin[1]);
     printf("    z: %f\n", origin[2]);
 
+    printf("Cell dimensions:\n");
+    printf("    dx: %f\n", dx);
+    printf("    dy: %f\n", dy);
+    printf("    dz: %f\n", dz);
+
+
     *tensor = (dim_t*)malloc(sizeof(dim_t)*dim->x_dim*dim->y_dim*dim->z_dim);
     
     for (int i=0; i<dim->x_dim; i++){
         for (int j=0; j<dim->y_dim; j++){
             for (int k=0; k<dim->z_dim; k++){
-                fread(&(*tensor)[k + j*dim->y_dim + i*dim->y_dim*dim->z_dim], sizeof(dim_t), 1, fptr);
+                fread(&(*tensor)[k + j*dim->z_dim + i*dim->y_dim*dim->z_dim], sizeof(dim_t), 1, fptr);
                 // verbose_print("%f\n", (*tensor)[i + dim->x_dim*j + k + dim->x_dim*dim->y_dim]);
             }
         }
@@ -78,10 +84,10 @@ void print_grid(const Dimensions *dim, const dim_t *grid){
 void print_stack(StackNode *start){
     verbose_print("    Stack content:\n");
     while(start != NULL){
-        verbose_print("        Coord: (%d, %d, %d); Val: %f\n",    start->coordinate.x,
-                                                            start->coordinate.y,
-                                                            start->coordinate.z,
-                                                            start->owned_value);
+        verbose_print("        Coord: (%d, %d, %d); Val: %f\n",     start->coordinate.x,
+                                                                    start->coordinate.y,
+                                                                    start->coordinate.z,
+                                                                    start->owned_value);
         start = start->next;
     }
 }
@@ -184,4 +190,62 @@ void merge_files(char *atoms, char* conn){
 
     fclose(f_atoms);
     fclose(f_conn);
+}
+
+void print_with_unique_indices(Polyhedra *p){
+    FILE *fptr;
+    VertexNode *curr = p->vertices;
+    VertexNode *del = NULL;
+
+    fptr = fopen("new.pdb", "w");
+
+    while(curr != NULL){
+        fprintf(fptr, "ATOM  %5d 0    PSE A   0      %6.3f  %6.3f  %6.3f  1.00  1.00           C\n", 
+                curr->idx, curr->vertex->x, curr->vertex->y, curr->vertex->z);
+        // del = curr;
+        curr = curr->next;
+        // free(del);
+    }
+
+    printf("A\n");
+
+    TriangleNode *curr2 = p->triangles;
+
+    // // Debug print for triangles
+    // printf("Triangles in polyhedron:\n");
+    // TriangleNode *debug_curr = p->triangles;
+    // int triangle_count = 0;
+
+    // while(debug_curr != NULL){
+    //     printf("Triangle %d: Vertices %d, %d, %d\n", 
+    //            triangle_count++, debug_curr->vert1, debug_curr->vert2, debug_curr->vert3);
+    //     debug_curr = debug_curr->next;
+    // }
+    // printf("Total triangles: %d\n", triangle_count);
+
+    // if(curr2->vert1 <= 9999 && curr2->vert2 <= 9999 && curr2->vert3 <= 9999){
+
+        while(curr2 != NULL){
+            if (curr2->vert1 < curr2->vert2) {
+                fprintf(fptr, "CONECT%5d%5d\n", curr2->vert1, curr2->vert2);
+            } else {
+                fprintf(fptr, "CONECT%5d%5d\n", curr2->vert2, curr2->vert1);
+            }
+            
+            if (curr2->vert2 < curr2->vert3) {
+                fprintf(fptr, "CONECT%5d%5d\n", curr2->vert2, curr2->vert3);
+            } else {
+                fprintf(fptr, "CONECT%5d%5d\n", curr2->vert3, curr2->vert2);
+            }
+            
+            if (curr2->vert3 < curr2->vert1) {
+                fprintf(fptr, "CONECT%5d%5d\n", curr2->vert3, curr2->vert1);
+            } else {
+                fprintf(fptr, "CONECT%5d%5d\n", curr2->vert1, curr2->vert3);
+            }
+            curr2 = curr2->next;
+        }
+    // }
+    
+    fclose(fptr);
 }

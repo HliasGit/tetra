@@ -93,3 +93,13 @@ void linear_interpol(TriangleVertex *vtx,CubeVertex *point1, CubeVertex *point2,
     vtx->y = ((coord_t)(point1->y) + ((((coord_t)point2->y - (coord_t)point1->y) / ((*val2) - (*val1))) * (threshold - (*val1))));
     vtx->z = ((coord_t)(point1->z) + ((((coord_t)point2->z - (coord_t)point1->z) / ((*val2) - (*val1))) * (threshold - (*val1))));
 }
+
+bool coordinate_less_than(TriangleVertex *v1, TriangleVertex *v2){ // LEXICOGRAPHIC ORDER
+    return  (v1->x < v2->x) || 
+            (v1->x == v2->x && v1->y < v2->y) || 
+            (v1->x == v2->x && v1->y == v2->y && v1->z < v2->z);
+}
+
+bool coordinate_equals(TriangleVertex *v1, TriangleVertex *v2){
+    return (v1->x == v2->x) && (v1->y == v2->y) && (v1->z == v2->z);
+}

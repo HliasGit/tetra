@@ -30,13 +30,15 @@ void normalize_grid(Dimensions *dim, dim_t **grid, dim_t threshold){
  * @param origin Pointer to the origin coordinates 
  * @param func_ptr Function pointer to invoke dynamically the interpolation function
  */
-void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition, int *count, dim_t threshold, double *origin, void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t)){
+void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition, int *count, dim_t threshold, double *origin, void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t), Polyhedra *p){
     CubeVertex *coordinates;
     StackNode *stack = NULL;
+    int vertex_counter = 0;
+
     // for every cube in the space
-    for(size_t k=0; k<dim->z_dim-1; k++){ // Cube global coordinate
+    for (size_t i=0; i<dim->x_dim-1; i++){
         for (size_t j=0; j<dim->y_dim-1; j++){
-            for (size_t i=0; i<dim->x_dim-1; i++){
+            for(size_t k=0; k<dim->z_dim-1; k++){ // Cube global coordinate
 
                 // check if every vertex in the cube is F(x,y,x) - C < threshold and in case skip it 
                 for (int tetra = 0; tetra<20; tetra+=4){ // for every tetrahedron in a cube
@@ -56,9 +58,9 @@ void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition,
 
                         // get the # neg, # zero, # pos for each tetrahedron in the stack
                         push_into_stack(&stack,
-                                        (*grid)[coordinates[idx-tetra].x + 
-                                                coordinates[idx-tetra].y*dim->x_dim + 
-                                                coordinates[idx-tetra].z*dim->x_dim*dim->y_dim],
+                                        (*grid)[coordinates[idx-tetra].z + 
+                                                coordinates[idx-tetra].y*dim->z_dim + 
+                                                coordinates[idx-tetra].x*dim->z_dim*dim->y_dim],
                                         coordinates[idx-tetra]);
 
                         
@@ -77,8 +79,8 @@ void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition,
                     // get the pairs
                     int *pairs = get_pairs(action_value);
 
-                    if(*count>3300)
-                        exit(-1);
+                    // if(*count>3300)
+                    //     exit(-1);
                     
                     // Print pairs for debug
                     if(action_value!=0){
@@ -87,54 +89,59 @@ void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition,
                             verbose_print("(%d, %d) ", pairs[p], pairs[p + 1]);
                         }
                         verbose_print("\n");
+
                         // build the triangle 
                         Triangle *triangle = make_triangle(stack, pairs, false, threshold, func_ptr);
 
                         // exit(-1);
                         
                         (*count)++;
-                        printf("Triangle #%d\n", *count);
-                        printf("    vertex 1:\n");
-                        printf("        x: %f\n", triangle->v1->x);
-                        printf("        y: %f\n", triangle->v1->y);
-                        printf("        z: %f\n", triangle->v1->z);
-                        printf("    vertex 2:\n");
-                        printf("        x: %f\n", triangle->v2->x);
-                        printf("        y: %f\n", triangle->v2->y);
-                        printf("        z: %f\n", triangle->v2->z);
-                        printf("    vertex 3:\n");
-                        printf("        x: %f\n", triangle->v3->x);
-                        printf("        y: %f\n", triangle->v3->y);
-                        printf("        z: %f\n", triangle->v3->z);
+                        verbose_print("Triangle #%d\n", *count);
+                        verbose_print("    vertex 1:\n");
+                        verbose_print("        x: %f\n", triangle->v1->x);
+                        verbose_print("        y: %f\n", triangle->v1->y);
+                        verbose_print("        z: %f\n", triangle->v1->z);
+                        verbose_print("    vertex 2:\n");
+                        verbose_print("        x: %f\n", triangle->v2->x);
+                        verbose_print("        y: %f\n", triangle->v2->y);
+                        verbose_print("        z: %f\n", triangle->v2->z);
+                        verbose_print("    vertex 3:\n");
+                        verbose_print("        x: %f\n", triangle->v3->x);
+                        verbose_print("        y: %f\n", triangle->v3->y);
+                        verbose_print("        z: %f\n", triangle->v3->z);
 
-                        print_to_file(triangle, count, origin);
-                        print_connections(triangle, count);
+                        // print_to_file(triangle, count, origin);
+                        // print_connections(triangle, count);
+
+                        push_triangle(&p, triangle, &vertex_counter);
 
                         if(action_value==7 ? true:false){
                             Triangle *triangle = make_triangle(stack, pairs, action_value==7 ? true:false, threshold, func_ptr);
                         
                             (*count)++;
-                            printf("Triangle #%d\n", *count);
-                            printf("    vertex 1:\n");
-                            printf("        x: %f\n", triangle->v1->x);
-                            printf("        y: %f\n", triangle->v1->y);
-                            printf("        z: %f\n", triangle->v1->z);
-                            printf("    vertex 2:\n");
-                            printf("        x: %f\n", triangle->v2->x);
-                            printf("        y: %f\n", triangle->v2->y);
-                            printf("        z: %f\n", triangle->v2->z);
-                            printf("    vertex 3:\n");
-                            printf("        x: %f\n", triangle->v3->x);
-                            printf("        y: %f\n", triangle->v3->y);
-                            printf("        z: %f\n", triangle->v3->z);
+                            verbose_print("Triangle #%d\n", *count);
+                            verbose_print("    vertex 1:\n");
+                            verbose_print("        x: %f\n", triangle->v1->x);
+                            verbose_print("        y: %f\n", triangle->v1->y);
+                            verbose_print("        z: %f\n", triangle->v1->z);
+                            verbose_print("    vertex 2:\n");
+                            verbose_print("        x: %f\n", triangle->v2->x);
+                            verbose_print("        y: %f\n", triangle->v2->y);
+                            verbose_print("        z: %f\n", triangle->v2->z);
+                            verbose_print("    vertex 3:\n");
+                            verbose_print("        x: %f\n", triangle->v3->x);
+                            verbose_print("        y: %f\n", triangle->v3->y);
+                            verbose_print("        z: %f\n", triangle->v3->z);
 
-                            print_to_file(triangle, count, origin);
-                            print_connections(triangle, count);
+                            // print_to_file(triangle, count, origin);
+                            // print_connections(triangle, count);
+
+                            push_triangle(&p, triangle, &vertex_counter);
                         }
+
+                        printf("%d, %d \n", *count, action_value);
                     }
 
-                    // printf("COUNT: %d\n", *count);
-                    // exit(1);
 
                     free(pairs);
                     free_stack(&stack);
@@ -251,7 +258,7 @@ void find_coordinates(int idx, const int point, const size_t i, const size_t j, 
 int get_action_value(StackNode *start, dim_t threshold){
     int val[3] = {0,0,0};
 
-    // printf("Threshold %d\n", threshold);
+    // printf("Threshold %f\n", threshold);
     // exit(1);
 
     while(start != NULL){

@@ -89,3 +89,73 @@ dim_t *get_value_by_idx(StackNode *start, int idx){
     verbose_print("Found\n");
     return &ptr->owned_value;
 }
+
+int push_vertex(VertexNode **start, TriangleVertex *m_vertex, int *vertex_counter){
+    VertexNode *new = (VertexNode*) malloc(sizeof(VertexNode));
+    new->vertex = m_vertex;
+    new->next = NULL;
+
+    if(*start == NULL || coordinate_less_than(m_vertex, (*start)->vertex)){
+        (*vertex_counter)++;
+        new->idx = *vertex_counter;
+        new->next = *start;
+        *start = new;
+        return new->idx;
+    } else {
+        VertexNode *current = *start;
+        while(current->next != NULL && coordinate_less_than(current->next->vertex, m_vertex)){
+            current = current->next;
+        }
+        if(current->next != NULL){
+            current = current->next;
+        }
+        if(!coordinate_equals(current->vertex, m_vertex)){
+            (*vertex_counter)++;
+            new->idx = *vertex_counter;
+            new->next = current->next;
+            current->next = new;
+            return new->idx;
+        } else {
+            return current->idx;
+        }
+    }
+}
+
+void print_vertex_list(VertexNode *start){
+    int count = 0;
+    while(start != NULL){
+        printf("    Vertex %d:\n", start->idx);
+        printf("        x: %f\n", start->vertex->x);
+        printf("        y: %f\n", start->vertex->y);
+        printf("        z: %f\n", start->vertex->z);
+        
+        start = start->next;
+    }
+}
+
+void push_triangle(Polyhedra **p, Triangle *triangle, int *vertex_counter){
+    TriangleNode *new = (TriangleNode*) malloc(sizeof(TriangleNode));
+    new->vert1 = push_vertex(&(*p)->vertices, triangle->v1, &(*vertex_counter));
+    new->vert2 = push_vertex(&(*p)->vertices, triangle->v2, &(*vertex_counter));
+    new->vert3 = push_vertex(&(*p)->vertices, triangle->v3, &(*vertex_counter));
+
+    // printf("Added new triangle:\n");
+    // printf("    Vertices: %d, %d, %d\n", new->vert1, new->vert2, new->vert3);
+
+    new->next = (*p)->triangles;
+    (*p)->triangles = new;
+}
+
+void print_triangle_list(TriangleNode *start){
+    int count = 0;
+    while(start != NULL){
+        count++;
+        printf("Triangle %d\n", count);
+        printf("    Vertex:\n");
+        printf("        x: %d\n", start->vert1);
+        printf("        y: %d\n", start->vert2);
+        printf("        z: %d\n", start->vert3);
+        
+        start = start->next;
+    }
+}
