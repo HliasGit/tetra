@@ -135,9 +135,18 @@ void print_vertex_list(VertexNode *start){
 
 void push_triangle(Polyhedra **p, Triangle *triangle, int *vertex_counter){
     TriangleNode *new = (TriangleNode*) malloc(sizeof(TriangleNode));
-    new->vert1 = push_vertex(&(*p)->vertices, triangle->v1, &(*vertex_counter));
-    new->vert2 = push_vertex(&(*p)->vertices, triangle->v2, &(*vertex_counter));
-    new->vert3 = push_vertex(&(*p)->vertices, triangle->v3, &(*vertex_counter));
+
+    // new->vert1 = push_vertex(&(*p)->vertices, triangle->v1, &(*vertex_counter));
+    // new->vert2 = push_vertex(&(*p)->vertices, triangle->v2, &(*vertex_counter));
+    // new->vert3 = push_vertex(&(*p)->vertices, triangle->v3, &(*vertex_counter));
+
+    double coord1[] = {triangle->v1->x, triangle->v1->y, triangle->v1->z};
+    double coord2[] = {triangle->v2->x, triangle->v2->y, triangle->v2->z};
+    double coord3[] = {triangle->v3->x, triangle->v3->y, triangle->v3->z};
+
+    new->vert1 = add(&(*p)->root, coord1, &(*vertex_counter));
+    new->vert2 = add(&(*p)->root, coord2, &(*vertex_counter));
+    new->vert3 = add(&(*p)->root, coord3, &(*vertex_counter));
 
     // printf("Added new triangle:\n");
     // printf("    Vertices: %d, %d, %d\n", new->vert1, new->vert2, new->vert3);
@@ -158,4 +167,187 @@ void print_triangle_list(TriangleNode *start){
         
         start = start->next;
     }
+}
+
+int add(TriangleCoordNode **root, double *full_coordinate, int *idx) {
+    if (*root == NULL) {
+        // printf("Generating root block\n");
+        TriangleCoordNode *first = malloc(sizeof(TriangleCoordNode));
+        TriangleCoordNode *second = malloc(sizeof(TriangleCoordNode));
+        TriangleCoordNode *third = malloc(sizeof(TriangleCoordNode));
+        
+        if (!first || !second || !third) {
+            printf("Memory allocation failed\n");
+            return false;
+        }
+
+        first->coordinate = full_coordinate[0];
+        first->level = 1;
+        first->next_list = NULL;
+        first->next_level = second;
+        
+        second->coordinate = full_coordinate[1];
+        second->level = 2;
+        second->next_list = NULL;
+        second->next_level = third;
+        
+        third->coordinate = full_coordinate[2];
+        third->level = 3;
+        third->next_list = NULL;
+        third->next_level = NULL;
+
+        // printf("Block root coordinates: %d -> %d -> %d\n", first->coordinate, second->coordinate, third->coordinate);
+        *root = first;
+        return (*idx)++;
+    }
+    
+    TriangleCoordNode *curr = *root;
+    TriangleCoordNode *prev = NULL;
+    bool create = true;
+    
+    while (curr) {
+        if (curr->coordinate == full_coordinate[0]) {
+            create = false;
+            break;
+        }
+        prev = curr;
+        curr = curr->next_list;
+    }
+    
+    if (create) {
+        // printf("Generating complete block\n");
+        TriangleCoordNode *first = malloc(sizeof(TriangleCoordNode));
+        TriangleCoordNode *second = malloc(sizeof(TriangleCoordNode));
+        TriangleCoordNode *third = malloc(sizeof(TriangleCoordNode));
+        
+        if (!first || !second || !third) {
+            printf("Memory allocation failed\n");
+            exit(-1);
+        }
+
+        first->coordinate = full_coordinate[0];
+        first->level = 1;
+        first->next_list = NULL;
+        first->next_level = second;
+        
+        second->coordinate = full_coordinate[1];
+        second->level = 2;
+        second->next_list = NULL;
+        second->next_level = third;
+        
+        third->coordinate = full_coordinate[2];
+        third->level = 3;
+        third->next_list = NULL;
+        third->next_level = NULL;
+
+        // printf("Block coordinates: %d -> %d -> %d\n", first->coordinate, second->coordinate, third->coordinate);
+        if (prev) prev->next_list = first;
+
+        third->index = (*idx)++;
+
+        return third->index;
+    }
+    
+    create = true;
+    prev = NULL;
+    curr = curr->next_level;
+    
+    while (curr) {
+        if (curr->coordinate == full_coordinate[1]) {
+            create = false;
+            break;
+        }
+        prev = curr;
+        curr = curr->next_list;
+    }
+    
+    if (create) {
+        // printf("Generating two-block\n");
+        TriangleCoordNode *second = malloc(sizeof(TriangleCoordNode));
+        TriangleCoordNode *third = malloc(sizeof(TriangleCoordNode));
+        
+        if (!second || !third) {
+            printf("Memory allocation failed\n");
+            exit(-1);
+        }
+
+        second->coordinate = full_coordinate[1];
+        second->level = 2;
+        second->next_list = NULL;
+        second->next_level = third;
+        
+        third->coordinate = full_coordinate[2];
+        third->level = 3;
+        third->next_list = NULL;
+        third->next_level = NULL;
+
+        // printf("Block coordinates: %d -> %d\n", second->coordinate, third->coordinate);
+        if (prev) prev->next_list = second;
+        
+        third->index = (*idx)++;
+
+        return third->index;
+    }
+    
+    create = true;
+    prev = NULL;
+    curr = curr->next_level;
+    
+    while (curr) {
+        if (curr->coordinate == full_coordinate[2]) {
+            create = false;
+            return curr->index;
+        }
+        prev = curr;
+        curr = curr->next_list;
+    }
+    
+    if (create) {
+        // printf("Generating one-block\n");
+        TriangleCoordNode *third = malloc(sizeof(TriangleCoordNode));
+        
+        if (!third) {
+            printf("Memory allocation failed\n");
+            exit(-1);
+        }
+
+        third->coordinate = full_coordinate[2];
+        third->level = 3;
+        third->next_level = NULL;
+        third->next_list = NULL;
+
+        // printf("Block coordinate: %d\n", third->coordinate);
+        if (prev) prev->next_list = third;
+        
+        third->index = (*idx)++;
+
+        return third->index;
+    }
+}
+
+void print_vertices(TriangleCoordNode *TriangleCoordNode, double *first, double *second, FILE *fptr) {
+    if (TriangleCoordNode == NULL) return;
+    
+    while (TriangleCoordNode) {
+        if(TriangleCoordNode->level == 1){
+            *first = TriangleCoordNode->coordinate;
+        }
+        if(TriangleCoordNode->level == 2){
+            *second = TriangleCoordNode->coordinate;
+        }
+        if(TriangleCoordNode->level == 3){
+            // printf("Level: %d, Coordinate: %f, %f, %f\n", TriangleCoordNode->level, *first, *second, TriangleCoordNode->coordinate);
+            fprintf( fptr, "ATOM  %5d 0    PSE A   0      %6.3f  %6.3f  %6.3f  1.00  1.00           C\n", 
+                    TriangleCoordNode->index, *first, *second, TriangleCoordNode->coordinate);
+        }
+        print_vertices(TriangleCoordNode->next_level, first, second, fptr);
+        TriangleCoordNode = TriangleCoordNode->next_list;
+    }
+}
+
+void free_tree(TriangleCoordNode *TriangleCoordNode) {
+    if (TriangleCoordNode == NULL) return;
+    free_tree(TriangleCoordNode->next_level);
+    free_tree(TriangleCoordNode->next_list);
+    free(TriangleCoordNode);
 }

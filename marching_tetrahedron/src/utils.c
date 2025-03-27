@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "struct.h"
 
 /**
  * @brief Reads a file and initializes the tensor data (linearized) structure along with its dimensions and origin.
@@ -194,58 +195,62 @@ void merge_files(char *atoms, char* conn){
 
 void print_with_unique_indices(Polyhedra *p){
     FILE *fptr;
-    VertexNode *curr = p->vertices;
+    TriangleCoordNode *curr = p->root;
     VertexNode *del = NULL;
+    double first = 0.0;
+    double second = 0.0;
 
     fptr = fopen("new.pdb", "w");
 
-    while(curr != NULL){
-        fprintf(fptr, "ATOM  %5d 0    PSE A   0      %6.3f  %6.3f  %6.3f  1.00  1.00           C\n", 
-                curr->idx, curr->vertex->x, curr->vertex->y, curr->vertex->z);
-        // del = curr;
-        curr = curr->next;
-        // free(del);
-    }
-
-    printf("A\n");
-
-    TriangleNode *curr2 = p->triangles;
-
-    // // Debug print for triangles
-    // printf("Triangles in polyhedron:\n");
-    // TriangleNode *debug_curr = p->triangles;
-    // int triangle_count = 0;
-
-    // while(debug_curr != NULL){
-    //     printf("Triangle %d: Vertices %d, %d, %d\n", 
-    //            triangle_count++, debug_curr->vert1, debug_curr->vert2, debug_curr->vert3);
-    //     debug_curr = debug_curr->next;
+    // while(curr != NULL){
+    //     fprintf(fptr, "ATOM  %5d 0    PSE A   0      %6.3f  %6.3f  %6.3f  1.00  1.00           C\n", 
+    //             curr->idx, curr->, curr->vertex->y, curr->vertex->z);
+    //     // del = curr;
+    //     curr = curr->next;
+    //     // free(del);
     // }
-    // printf("Total triangles: %d\n", triangle_count);
 
-    // if(curr2->vert1 <= 9999 && curr2->vert2 <= 9999 && curr2->vert3 <= 9999){
+    //TODO Print atoms
 
-        while(curr2 != NULL){
-            if (curr2->vert1 < curr2->vert2) {
-                fprintf(fptr, "CONECT%5d%5d\n", curr2->vert1, curr2->vert2);
-            } else {
-                fprintf(fptr, "CONECT%5d%5d\n", curr2->vert2, curr2->vert1);
-            }
+    print_vertices(p->root, &first, &second, fptr);
+
+    // TriangleNode *curr2 = p->triangles;
+
+    // // // Debug print for triangles
+    // // printf("Triangles in polyhedron:\n");
+    // // TriangleNode *debug_curr = p->triangles;
+    // // int triangle_count = 0;
+
+    // // while(debug_curr != NULL){
+    // //     printf("Triangle %d: Vertices %d, %d, %d\n", 
+    // //            triangle_count++, debug_curr->vert1, debug_curr->vert2, debug_curr->vert3);
+    // //     debug_curr = debug_curr->next;
+    // // }
+    // // printf("Total triangles: %d\n", triangle_count);
+
+    // // if(curr2->vert1 <= 9999 && curr2->vert2 <= 9999 && curr2->vert3 <= 9999){
+
+    //     while(curr2 != NULL){
+    //         if (curr2->vert1 < curr2->vert2) {
+    //             fprintf(fptr, "CONECT%5d%5d\n", curr2->vert1, curr2->vert2);
+    //         } else {
+    //             fprintf(fptr, "CONECT%5d%5d\n", curr2->vert2, curr2->vert1);
+    //         }
             
-            if (curr2->vert2 < curr2->vert3) {
-                fprintf(fptr, "CONECT%5d%5d\n", curr2->vert2, curr2->vert3);
-            } else {
-                fprintf(fptr, "CONECT%5d%5d\n", curr2->vert3, curr2->vert2);
-            }
+    //         if (curr2->vert2 < curr2->vert3) {
+    //             fprintf(fptr, "CONECT%5d%5d\n", curr2->vert2, curr2->vert3);
+    //         } else {
+    //             fprintf(fptr, "CONECT%5d%5d\n", curr2->vert3, curr2->vert2);
+    //         }
             
-            if (curr2->vert3 < curr2->vert1) {
-                fprintf(fptr, "CONECT%5d%5d\n", curr2->vert3, curr2->vert1);
-            } else {
-                fprintf(fptr, "CONECT%5d%5d\n", curr2->vert1, curr2->vert3);
-            }
-            curr2 = curr2->next;
-        }
-    // }
+    //         if (curr2->vert3 < curr2->vert1) {
+    //             fprintf(fptr, "CONECT%5d%5d\n", curr2->vert3, curr2->vert1);
+    //         } else {
+    //             fprintf(fptr, "CONECT%5d%5d\n", curr2->vert1, curr2->vert3);
+    //         }
+    //         curr2 = curr2->next;
+    //     }
+    // // }
     
     fclose(fptr);
 }

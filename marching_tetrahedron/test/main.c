@@ -7,9 +7,9 @@ int main(){
     Dimensions dim;
 
     char folder_name[100] = "/home/elia/tesi/code/marching_tetrahedron/test/data/";
-    char *path = strcat(folder_name, "h_2.bin");
+    char *path = strcat(folder_name, "ala_eddi.bin");
 
-    dim_t threshold = 0.25;
+    dim_t threshold = 0.02;
     dim_t *grid;
 
     double origin[3];
@@ -24,22 +24,25 @@ int main(){
 
     void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t);
 
-    func_ptr = &linear_interpol;
+    func_ptr = &midpoint_interpol;
 
     Polyhedra p;
     p.triangles = NULL;
     p.vertices = NULL;
-
+    p.root = NULL;
 
     int count = 0;
     marching_tetrahedra(&dim, &grid, cube_decomposition, &count, threshold, origin, func_ptr, &p);
 
-    merge_files("write.pdb", "conn.pdb");
-
     printf("Count: %d\n", count);
 
-    if(p.triangles == NULL || p.vertices == NULL){
-        fprintf(stderr, "either triangles or vertice null\n");
+    if (p.triangles == NULL) {
+        fprintf(stderr, "triangles is null\n");
+        exit(-1);
+    }
+
+    if (p.root == NULL) {
+        fprintf(stderr, "root is null\n");
         exit(-1);
     }
 

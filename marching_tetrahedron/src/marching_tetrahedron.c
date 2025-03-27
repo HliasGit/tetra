@@ -30,7 +30,9 @@ void normalize_grid(Dimensions *dim, dim_t **grid, dim_t threshold){
  * @param origin Pointer to the origin coordinates 
  * @param func_ptr Function pointer to invoke dynamically the interpolation function
  */
-void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition, int *count, dim_t threshold, double *origin, void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t), Polyhedra *p){
+void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decomposition, int *count, dim_t threshold, double *origin, 
+                            void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t), Polyhedra *p)       {
+
     CubeVertex *coordinates;
     StackNode *stack = NULL;
     int vertex_counter = 0;
@@ -62,9 +64,6 @@ void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition,
                                                 coordinates[idx-tetra].y*dim->z_dim + 
                                                 coordinates[idx-tetra].x*dim->z_dim*dim->y_dim],
                                         coordinates[idx-tetra]);
-
-                        
-
                     }
                     
                     // Print for debug
@@ -81,6 +80,8 @@ void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition,
 
                     // if(*count>3300)
                     //     exit(-1);
+
+                    // printf("PISELLO\n");
                     
                     // Print pairs for debug
                     if(action_value!=0){
@@ -135,14 +136,10 @@ void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition,
 
                             // print_to_file(triangle, count, origin);
                             // print_connections(triangle, count);
-
                             push_triangle(&p, triangle, &vertex_counter);
                         }
-
-                        printf("%d, %d \n", *count, action_value);
+                        // printf("%d, %d \n", *count, action_value);
                     }
-
-
                     free(pairs);
                     free_stack(&stack);
                     free(coordinates);

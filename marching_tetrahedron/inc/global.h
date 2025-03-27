@@ -61,9 +61,19 @@ typedef struct VertexNode{
     int idx;
 } VertexNode;
 
+typedef struct TriangleCoordNode {
+    double coordinate;
+    int level;
+    struct TriangleCoordNode* next_list;
+    struct TriangleCoordNode* next_level;
+    int index;
+} TriangleCoordNode;
+
 typedef struct Polyhedra{
     struct TriangleNode *triangles;
     VertexNode *vertices;
+    TriangleCoordNode *root;
 } Polyhedra;
+
 
 #endif //TETRA

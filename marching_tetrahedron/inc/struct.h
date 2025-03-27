@@ -12,5 +12,8 @@ int push_vertex(VertexNode **start, TriangleVertex *m_vertex, int *vertex_counte
 void print_vertex_list(VertexNode *start);
 void push_triangle(Polyhedra **p, Triangle *triangle, int *vertex_counter);
 void print_triangle_list(TriangleNode *start);
+int add(TriangleCoordNode **root, double *full_coordinate, int *idx);
+void print_vertices(TriangleCoordNode *TriangleCoordNode, double *first, double *second, FILE *fptr);
+void free_tree(TriangleCoordNode *TriangleCoordNode);
 
 #endif // STRUCT_H
