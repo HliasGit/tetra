@@ -33,19 +33,20 @@ void read_file(const char* file_name, Dimensions *dim, dim_t **tensor, double *o
     fread(&(dim->y_dim), sizeof(size_t), 1, fptr);
     fread(&(dim->z_dim), sizeof(size_t), 1, fptr);
 
-    printf("x_dim: %d\n", dim->x_dim);
-    printf("y_dim: %d\n", dim->y_dim);
-    printf("z_dim: %d\n", dim->z_dim);
+    verbose_print("Dimensions:\n");
+    verbose_print("    x_dim: %zu\n", dim->x_dim);
+    verbose_print("    y_dim: %zu\n", dim->y_dim);
+    verbose_print("    z_dim: %zu\n", dim->z_dim);
 
-    printf("Origin:\n");
-    printf("    x: %f\n", origin[0]);
-    printf("    y: %f\n", origin[1]);
-    printf("    z: %f\n", origin[2]);
+    verbose_print("Origin:\n");
+    verbose_print("    x: %f\n", origin[0]);
+    verbose_print("    y: %f\n", origin[1]);
+    verbose_print("    z: %f\n", origin[2]);
 
-    printf("Cell dimensions:\n");
-    printf("    dx: %f\n", dx);
-    printf("    dy: %f\n", dy);
-    printf("    dz: %f\n", dz);
+    verbose_print("Cell dimensions:\n");
+    verbose_print("    dx: %f\n", dx);
+    verbose_print("    dy: %f\n", dy);
+    verbose_print("    dz: %f\n", dz);
 
 
     *tensor = (dim_t*)malloc(sizeof(dim_t)*dim->x_dim*dim->y_dim*dim->z_dim);
@@ -58,6 +59,7 @@ void read_file(const char* file_name, Dimensions *dim, dim_t **tensor, double *o
             }
         }
     }
+
     fclose(fptr);
 }
 
@@ -131,7 +133,7 @@ void print_to_file(Triangle *triangle, int *count, double *origin){
  * @param triangle Pointer to the triangle
  * @param count Pointer to the triangle number
  */
-void print_connections(Triangle *triangle, int*count){
+void print_connections(Triangle *triangle, int *count){
     FILE *fptr;
 
     // ATOM      1 0    PSE A   0      60.000  58.000  46.500  1.00  1.00           C  
@@ -193,28 +195,28 @@ void merge_files(char *atoms, char* conn){
     fclose(f_conn);
 }
 
-void print_with_unique_indices(Polyhedra *p){
+/**
+ * @brief Print on file the triangles and the vertices
+ * 
+ * This uses the suffix tree data structure to store the vertices and the list for the triangles
+ * 
+ * @param Polyhedra p is a Pointer to a Polyhedra data structure contatining the first node for triangle and vertices
+ * @param char Pointer to the name of the file
+ */
+void print_on_file(Polyhedra *p, char *name){
     FILE *fptr;
     TriangleCoordNode *curr = p->root;
     VertexNode *del = NULL;
     double first = 0.0;
     double second = 0.0;
 
-    fptr = fopen("new.pdb", "w");
+    strcat(name, ".pdb");
 
-    // while(curr != NULL){
-    //     fprintf(fptr, "ATOM  %5d 0    PSE A   0      %6.3f  %6.3f  %6.3f  1.00  1.00           C\n", 
-    //             curr->idx, curr->, curr->vertex->y, curr->vertex->z);
-    //     // del = curr;
-    //     curr = curr->next;
-    //     // free(del);
-    // }
-
-    //TODO Print atoms
+    fptr = fopen(name, "w");
 
     print_vertices(p->root, &first, &second, fptr);
 
-    // TriangleNode *curr2 = p->triangles;
+    TriangleNode *curr2 = p->triangles;
 
     // // // Debug print for triangles
     // // printf("Triangles in polyhedron:\n");
@@ -230,27 +232,59 @@ void print_with_unique_indices(Polyhedra *p){
 
     // // if(curr2->vert1 <= 9999 && curr2->vert2 <= 9999 && curr2->vert3 <= 9999){
 
-    //     while(curr2 != NULL){
-    //         if (curr2->vert1 < curr2->vert2) {
-    //             fprintf(fptr, "CONECT%5d%5d\n", curr2->vert1, curr2->vert2);
-    //         } else {
-    //             fprintf(fptr, "CONECT%5d%5d\n", curr2->vert2, curr2->vert1);
-    //         }
-            
-    //         if (curr2->vert2 < curr2->vert3) {
-    //             fprintf(fptr, "CONECT%5d%5d\n", curr2->vert2, curr2->vert3);
-    //         } else {
-    //             fprintf(fptr, "CONECT%5d%5d\n", curr2->vert3, curr2->vert2);
-    //         }
-            
-    //         if (curr2->vert3 < curr2->vert1) {
-    //             fprintf(fptr, "CONECT%5d%5d\n", curr2->vert3, curr2->vert1);
-    //         } else {
-    //             fprintf(fptr, "CONECT%5d%5d\n", curr2->vert1, curr2->vert3);
-    //         }
-    //         curr2 = curr2->next;
+    // while(curr2 != NULL){
+    //     if (curr2->vert1 < curr2->vert2) {
+    //         fprintf(fptr, "CONECT%5d%5d\n", curr2->vert1, curr2->vert2);
+    //     } else {
+    //         fprintf(fptr, "CONECT%5d%5d\n", curr2->vert2, curr2->vert1);
     //     }
-    // // }
+        
+    //     if (curr2->vert2 < curr2->vert3) {
+    //         fprintf(fptr, "CONECT%5d%5d\n", curr2->vert2, curr2->vert3);
+    //     } else {
+    //         fprintf(fptr, "CONECT%5d%5d\n", curr2->vert3, curr2->vert2);
+    //     }
+        
+    //     if (curr2->vert3 < curr2->vert1) {
+    //         fprintf(fptr, "CONECT%5d%5d\n", curr2->vert3, curr2->vert1);
+    //     } else {
+    //         fprintf(fptr, "CONECT%5d%5d\n", curr2->vert1, curr2->vert3);
+    //     }
+    //     curr2 = curr2->next;
+    // }
+    // }
     
     fclose(fptr);
+}
+
+void print_for_stats(Polyhedra *p){
+
+    FILE *fptr;
+    fptr = fopen("stats.csv", "w");
+
+    TriangleNode *curr2 = p->triangles;
+
+    while(curr2 != NULL){
+        if (curr2->vert1 < curr2->vert2) {
+            fprintf(fptr, "%8d,%8d\n", curr2->vert1, curr2->vert2);
+        } else {
+            fprintf(fptr, "%8d,%8d\n", curr2->vert2, curr2->vert1);
+        }
+        
+        if (curr2->vert2 < curr2->vert3) {
+            fprintf(fptr, "%8d,%8d\n", curr2->vert2, curr2->vert3);
+        } else {
+            fprintf(fptr, "%8d,%8d\n", curr2->vert3, curr2->vert2);
+        }
+        
+        if (curr2->vert3 < curr2->vert1) {
+            fprintf(fptr, "%8d,%8d\n", curr2->vert3, curr2->vert1);
+        } else {
+            fprintf(fptr, "%8d,%8d\n", curr2->vert1, curr2->vert3);
+        }
+        curr2 = curr2->next;
+    }
+
+    fclose(fptr);
+
 }

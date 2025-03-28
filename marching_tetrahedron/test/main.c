@@ -7,51 +7,54 @@ int main(){
     Dimensions dim;
 
     char folder_name[100] = "/home/elia/tesi/code/marching_tetrahedron/test/data/";
-    char *path = strcat(folder_name, "ala_eddi.bin");
-
+    char name[100] = "8z9k";
+    char name_original[100];
+    strcpy(name_original, name);
+    char *path = strcat(folder_name, strcat(name, ".bin"));
     dim_t threshold = 0.02;
-    dim_t *grid;
 
+    printf("Creating surface from file '");
+    printf(name);
+    printf("'\nUsing threshold: %f\n", threshold);
+
+    dim_t *grid;
     double origin[3];
 
     int cube_decomposition[20] = {4,6,7,8,1,5,6,7,1,3,4,7,1,2,4,6,1,4,6,7};
 
     read_file(path, &dim, &grid, origin);
 
-    // verbose_call(print_grid(&dim, grid));
-    // normalize_grid(&dim, &grid, threshold);
-    // verbose_call(print_grid(&dim, grid));
+    verbose_call(print_grid(&dim, grid));
 
-    void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t);
+    void (*interpolation_function)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t);
 
-    func_ptr = &midpoint_interpol;
+    interpolation_function = &midpoint_interpol;    // Choose among midpoint_interpolation and linear interpolation
 
     Polyhedra p;
     p.triangles = NULL;
     p.vertices = NULL;
     p.root = NULL;
 
-    int count = 0;
-    marching_tetrahedra(&dim, &grid, cube_decomposition, &count, threshold, origin, func_ptr, &p);
-
-    printf("Count: %d\n", count);
+    marching_tetrahedra(&dim, &grid, cube_decomposition, threshold, origin, interpolation_function, &p);
 
     if (p.triangles == NULL) {
-        fprintf(stderr, "triangles is null\n");
+        fprintf(stderr, "No triangles have been generated\n");
         exit(-1);
     }
 
     if (p.root == NULL) {
-        fprintf(stderr, "root is null\n");
+        fprintf(stderr, "No vertices have been generated\n");
         exit(-1);
     }
 
-    print_with_unique_indices(&p);
+    print_on_file(&p, name_original);
+    print_for_stats(&p);
+
+    free(grid),
+    free_tree(p.root);
+    free_list(p.triangles);
 
     // Print dimensions
-    printf("Dimensions: X=%d, Y=%d, Z=%d\n", dim.x_dim, dim.y_dim, dim.z_dim);
-
-
-
+    printf("Grid dimensions:\n\tX = %4ld\n\tY = %4ld\n\tZ = %4ld\n", dim.x_dim, dim.y_dim, dim.z_dim);
     return 0;
 }

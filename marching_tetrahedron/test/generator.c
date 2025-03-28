@@ -34,9 +34,9 @@ int main(){
 
     float var = 0;
 
-    for (int x=0; x<x_d; x++){
-        for (int y=0; y<y_d; y++){
-            for (int z=0; z<z_d; z++){
+    for (size_t x=0; x<x_d; x++){
+        for (size_t y=0; y<y_d; y++){
+            for (size_t z=0; z<z_d; z++){
                 // if(x == 1 && y == 1 && z == 1){
                 //     var = 1;
                 //     printf("PRINTATO\n");
