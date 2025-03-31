@@ -48,10 +48,20 @@ typedef struct StackNode{
     struct StackNode *next;
 } StackNode;
 
+typedef struct TriangleCoordNode {
+    double coordinate1;
+    double coordinate2;
+    double coordinate3;
+    int level;
+    struct TriangleCoordNode* next_list;
+    struct TriangleCoordNode* next_level;
+    size_t index;
+} TriangleCoordNode;
+
 typedef struct TriangleNode{
-    size_t vert1;
-    size_t vert2;
-    size_t vert3;
+    TriangleCoordNode *vert1;
+    TriangleCoordNode *vert2;
+    TriangleCoordNode *vert3;
     struct TriangleNode *next;
 } TriangleNode;
 
@@ -60,14 +70,6 @@ typedef struct VertexNode{
     struct VertexNode *next;
     int idx;
 } VertexNode;
-
-typedef struct TriangleCoordNode {
-    double coordinate;
-    int level;
-    struct TriangleCoordNode* next_list;
-    struct TriangleCoordNode* next_level;
-    size_t index;
-} TriangleCoordNode;
 
 typedef struct Polyhedra{
     struct TriangleNode *triangles;

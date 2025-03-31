@@ -232,26 +232,26 @@ void print_on_file(Polyhedra *p, char *name){
 
     // // if(curr2->vert1 <= 9999 && curr2->vert2 <= 9999 && curr2->vert3 <= 9999){
 
-    // while(curr2 != NULL){
-    //     if (curr2->vert1 < curr2->vert2) {
-    //         fprintf(fptr, "CONECT%5d%5d\n", curr2->vert1, curr2->vert2);
-    //     } else {
-    //         fprintf(fptr, "CONECT%5d%5d\n", curr2->vert2, curr2->vert1);
-    //     }
+    while(curr2 != NULL){
+        if (curr2->vert1 < curr2->vert2) {
+            fprintf(fptr, "CONECT%5d%5d\n", curr2->vert1->index, curr2->vert2->index);
+        } else {
+            fprintf(fptr, "CONECT%5d%5d\n", curr2->vert2->index, curr2->vert1->index);
+        }
         
-    //     if (curr2->vert2 < curr2->vert3) {
-    //         fprintf(fptr, "CONECT%5d%5d\n", curr2->vert2, curr2->vert3);
-    //     } else {
-    //         fprintf(fptr, "CONECT%5d%5d\n", curr2->vert3, curr2->vert2);
-    //     }
+        if (curr2->vert2 < curr2->vert3) {
+            fprintf(fptr, "CONECT%5d%5d\n", curr2->vert2->index, curr2->vert3->index);
+        } else {
+            fprintf(fptr, "CONECT%5d%5d\n", curr2->vert3->index, curr2->vert2->index);
+        }
         
-    //     if (curr2->vert3 < curr2->vert1) {
-    //         fprintf(fptr, "CONECT%5d%5d\n", curr2->vert3, curr2->vert1);
-    //     } else {
-    //         fprintf(fptr, "CONECT%5d%5d\n", curr2->vert1, curr2->vert3);
-    //     }
-    //     curr2 = curr2->next;
-    // }
+        if (curr2->vert3 < curr2->vert1) {
+            fprintf(fptr, "CONECT%5d%5d\n", curr2->vert3->index, curr2->vert1->index);
+        } else {
+            fprintf(fptr, "CONECT%5d%5d\n", curr2->vert1->index, curr2->vert3->index);
+        }
+        curr2 = curr2->next;
+    }
     // }
     
     fclose(fptr);
@@ -287,4 +287,218 @@ void print_for_stats(Polyhedra *p){
 
     fclose(fptr);
 
+}
+
+void print_on_separate_files(Polyhedra *p, char *name){ // ONE EVERY N
+
+    int N = 100000;
+    char file_name[100];
+
+    TriangleNode *curr = p->triangles;
+    int count = 0; 
+
+    FILE *fptr;
+
+    int file_number = 0;
+
+    // if (curr != NULL) {
+    //     printf("First triangle vertices:\n");
+    //     printf("Vertex 1: Index: %d, Coordinates: (%f, %f, %f)\n", 
+    //            curr->vert1->index, curr->vert1->coordinate1, curr->vert1->coordinate2, curr->vert1->coordinate3);
+    //     printf("Vertex 2: Index: %d, Coordinates: (%f, %f, %f)\n", 
+    //            curr->vert2->index, curr->vert2->coordinate1, curr->vert2->coordinate2, curr->vert2->coordinate3);
+    //     printf("Vertex 3: Index: %d, Coordinates: (%f, %f, %f)\n", 
+    //            curr->vert3->index, curr->vert3->coordinate1, curr->vert3->coordinate2, curr->vert3->coordinate3);
+    // } exit(-1);
+
+    int div = 0;
+
+    size_t idx = print_atoms_separated(p->triangles, name);
+    printf("IDX: %ld\n", idx);
+    print_connections_separated(p->triangles, name, idx);
+}
+
+size_t print_atoms_separated(TriangleNode *curr, char *name){
+    int N = 100000;
+    char file_name[100];
+    int min = 0;
+
+    int count = 0; 
+
+    typedef struct print_list{
+        struct print_list *next;
+        int idx;
+    } print_list;
+
+    FILE *fptr;
+
+    int file_number = 0;
+    int div = 0;
+
+    while(curr != NULL){
+
+        if(count%N == 0){
+            strcpy(file_name, name);
+            file_number = count/N;
+            div = count;
+            sprintf(file_name + strlen(file_name), "_%d", file_number);
+            strcat(file_name, ".pdb");
+            fptr = fopen(file_name, "w");
+        }
+
+        if(count/N == 0){
+            div = -1;
+        } else {
+            div = 48950;
+        }
+        
+        char str[500];
+        // snprintf(str, sizeof(str), "ATOM  %6d 0    PSE A   0      %6.3f  %6.3f  %6.3f  1.00  1.00           C\n", 
+        //         curr->vert1->index-div, curr->vert1->coordinate1, curr->vert1->coordinate2, curr->vert1->coordinate3);
+        // snprintf(str + strlen(str), sizeof(str) - strlen(str), "ATOM  %6d 0    PSE A   0      %6.3f  %6.3f  %6.3f  1.00  1.00           C\n", 
+        //         curr->vert2->index-div, curr->vert2->coordinate1, curr->vert2->coordinate2, curr->vert2->coordinate3);
+        // snprintf(str + strlen(str), sizeof(str) - strlen(str), "ATOM  %6d 0    PSE A   0      %6.3f  %6.3f  %6.3f  1.00  1.00           C\n", 
+        //         curr->vert3->index-div, curr->vert3->coordinate1, curr->vert3->coordinate2, curr->vert3->coordinate3);
+    
+        // fprintf(fptr, "%s", str);
+
+        // Add the indexes to the list if not already present and write them
+        static print_list *start = NULL; // Declare start as static to persist across calls
+        print_list *temp = start;
+        int found1 = 0, found2 = 0, found3 = 0;
+
+        while (temp != NULL) {
+            if (temp->idx == curr->vert1->index) found1 = 1;
+            if (temp->idx == curr->vert2->index) found2 = 1;
+            if (temp->idx == curr->vert3->index) found3 = 1;
+            temp = temp->next;
+        }
+
+        if (!found1) {
+            print_list *new_node = (print_list *)malloc(sizeof(print_list));
+            new_node->idx = curr->vert1->index;
+            new_node->next = start;
+            start = new_node;
+
+            snprintf(str, sizeof(str), "ATOM  %5d C    PSE A   1    %8.2f%8.2f%8.2f 1.00  1.00           C\n", 
+                curr->vert1->index-div, curr->vert1->coordinate1, curr->vert1->coordinate2, curr->vert1->coordinate3);
+            fprintf(fptr, "%s", str);
+        }
+
+        if (!found2) {
+            print_list *new_node = (print_list *)malloc(sizeof(print_list));
+            new_node->idx = curr->vert2->index;
+            new_node->next = start;
+            start = new_node;
+
+            snprintf(str, sizeof(str), "ATOM  %5d C    PSE A   1    %8.2f%8.2f%8.2f 1.00  1.00           C\n", 
+                curr->vert2->index-div, curr->vert2->coordinate1, curr->vert2->coordinate2, curr->vert2->coordinate3);
+            fprintf(fptr, "%s", str);
+        }
+
+        if (!found3) {
+            print_list *new_node = (print_list *)malloc(sizeof(print_list));
+            new_node->idx = curr->vert3->index;
+            new_node->next = start;
+            start = new_node;
+
+            snprintf(str, sizeof(str), "ATOM  %5d C    PSE A   1    %8.2f%8.2f%8.2f 1.00  1.00           C\n", 
+                curr->vert3->index-div, curr->vert3->coordinate1, curr->vert3->coordinate2, curr->vert3->coordinate3);
+            fprintf(fptr, "%s", str);
+        }
+
+
+        if (count / N != 0) {
+            if (min == 0 || curr->vert1->index < min) {
+            min = curr->vert1->index;
+            }
+            if (curr->vert2->index < min) {
+            min = curr->vert2->index;
+            }
+            if (curr->vert3->index < min) {
+            min = curr->vert3->index;
+            }
+        }
+
+        count++;
+        curr = curr->next;
+        if(count%N == 0 || curr == NULL){
+            fclose(fptr);
+        }
+    }
+    printf("Counts in the end: %d\n", count);
+    return min;
+}
+
+void print_connections_separated(TriangleNode *curr, char *name, int div){
+    int N = 100000;
+    char file_name[100];
+
+    int count = 0; 
+
+    FILE *fptr;
+
+    int tmp = div;
+
+    int file_number = 0;
+
+    // if (curr != NULL) {
+    //     printf("First triangle vertices:\n");
+    //     printf("Vertex 1: Index: %d, Coordinates: (%f, %f, %f)\n", 
+    //            curr->vert1->index, curr->vert1->coordinate1, curr->vert1->coordinate2, curr->vert1->coordinate3);
+    //     printf("Vertex 2: Index: %d, Coordinates: (%f, %f, %f)\n", 
+    //            curr->vert2->index, curr->vert2->coordinate1, curr->vert2->coordinate2, curr->vert2->coordinate3);
+    //     printf("Vertex 3: Index: %d, Coordinates: (%f, %f, %f)\n", 
+    //            curr->vert3->index, curr->vert3->coordinate1, curr->vert3->coordinate2, curr->vert3->coordinate3);
+    // } exit(-1);
+
+    // int div = 0;
+
+    while(curr != NULL){
+
+        if(count%N == 0){
+            strcpy(file_name, name);
+            file_number = count/N;
+            sprintf(file_name + strlen(file_name), "_%d", file_number);
+            strcat(file_name, ".pdb");
+            fptr = fopen(file_name, "a");
+        }
+
+        if(count/N == 0){
+            div = -1;
+        } else {
+            div = tmp-1;
+        }
+
+        if (curr->vert1->index-div >= 9999 || curr->vert2->index-div >= 9999 || curr->vert3->index-div >= 9999) {
+            count++;
+            curr = curr->next;
+            continue;
+        }
+        
+        if (curr->vert1->index < curr->vert2->index) {
+            fprintf(fptr, "CONECT%5d%5d\n", curr->vert1->index-div, curr->vert2->index-div);
+        } else {
+            fprintf(fptr, "CONECT%5d%5d\n", curr->vert2->index-div, curr->vert1->index-div);
+        }
+
+        if (curr->vert2->index < curr->vert3->index) {
+            fprintf(fptr, "CONECT%5d%5d\n", curr->vert2->index-div, curr->vert3->index-div);
+        } else {
+            fprintf(fptr, "CONECT%5d%5d\n", curr->vert3->index-div, curr->vert2->index-div);
+        }
+
+        if (curr->vert3->index < curr->vert1->index) {
+            fprintf(fptr, "CONECT%5d%5d\n", curr->vert3->index-div, curr->vert1->index-div);
+        } else {
+            fprintf(fptr, "CONECT%5d%5d\n", curr->vert1->index-div, curr->vert3->index-div);
+        }
+
+        count++;
+        curr = curr->next;
+        if(count%N == 0 || curr == NULL){
+            fclose(fptr);
+        }
+    }
+    printf("Counts in the end: %d\n", count);
 }

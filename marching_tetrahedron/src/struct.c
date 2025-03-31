@@ -151,8 +151,13 @@ void push_triangle(Polyhedra **p, Triangle *triangle, size_t *vertex_counter){
     verbose_print("Added new triangle:\n");
     verbose_print("    Vertices: %ld, %ld, %ld\n", new->vert1, new->vert2, new->vert3);
 
-    new->next = (*p)->triangles;
-    (*p)->triangles = new;
+
+    if ((*p)->triangles == NULL) {
+        (*p)->triangles = new;
+    } else {
+        (*p)->triangles->next = new;
+        (*p)->triangles = (*p)->triangles->next;
+    }
 }
 
 void print_triangle_list(TriangleNode *start){
@@ -169,7 +174,7 @@ void print_triangle_list(TriangleNode *start){
     }
 }
 
-int add(TriangleCoordNode **root, double *full_coordinate, size_t *idx) {
+TriangleCoordNode* add(TriangleCoordNode **root, double *full_coordinate, size_t *idx) {
     if (*root == NULL) {
         // printf("Generating root block\n");
         TriangleCoordNode *first = malloc(sizeof(TriangleCoordNode));
@@ -181,17 +186,19 @@ int add(TriangleCoordNode **root, double *full_coordinate, size_t *idx) {
             return false;
         }
 
-        first->coordinate = full_coordinate[0];
+        first->coordinate1 = full_coordinate[0];
         first->level = 1;
         first->next_list = NULL;
         first->next_level = second;
         
-        second->coordinate = full_coordinate[1];
+        second->coordinate2 = full_coordinate[1];
         second->level = 2;
         second->next_list = NULL;
         second->next_level = third;
         
-        third->coordinate = full_coordinate[2];
+        third->coordinate1 = full_coordinate[0];
+        third->coordinate2 = full_coordinate[1];
+        third->coordinate3 = full_coordinate[2];
         third->level = 3;
         third->next_list = NULL;
         third->next_level = NULL;
@@ -199,7 +206,7 @@ int add(TriangleCoordNode **root, double *full_coordinate, size_t *idx) {
 
         // printf("Block root coordinates: %d -> %d -> %d\n", first->coordinate, second->coordinate, third->coordinate);
         *root = first;
-        return third->index;
+        return third;
     }
     
     TriangleCoordNode *curr = *root;
@@ -207,7 +214,7 @@ int add(TriangleCoordNode **root, double *full_coordinate, size_t *idx) {
     bool create = true;
     
     while (curr) {
-        if (curr->coordinate == full_coordinate[0]) {
+        if (curr->coordinate1 == full_coordinate[0]) {
             create = false;
             break;
         }
@@ -226,17 +233,19 @@ int add(TriangleCoordNode **root, double *full_coordinate, size_t *idx) {
             exit(-1);
         }
 
-        first->coordinate = full_coordinate[0];
+        first->coordinate1 = full_coordinate[0];
         first->level = 1;
         first->next_list = NULL;
         first->next_level = second;
         
-        second->coordinate = full_coordinate[1];
+        second->coordinate2 = full_coordinate[1];
         second->level = 2;
         second->next_list = NULL;
         second->next_level = third;
         
-        third->coordinate = full_coordinate[2];
+        third->coordinate1 = full_coordinate[0];
+        third->coordinate2 = full_coordinate[1];
+        third->coordinate3 = full_coordinate[2];
         third->level = 3;
         third->next_list = NULL;
         third->next_level = NULL;
@@ -246,7 +255,7 @@ int add(TriangleCoordNode **root, double *full_coordinate, size_t *idx) {
 
         third->index = (*idx)++;
 
-        return third->index;
+        return third;
     }
     
     create = true;
@@ -254,7 +263,7 @@ int add(TriangleCoordNode **root, double *full_coordinate, size_t *idx) {
     curr = curr->next_level;
     
     while (curr) {
-        if (curr->coordinate == full_coordinate[1]) {
+        if (curr->coordinate2 == full_coordinate[1]) {
             create = false;
             break;
         }
@@ -272,12 +281,14 @@ int add(TriangleCoordNode **root, double *full_coordinate, size_t *idx) {
             exit(-1);
         }
 
-        second->coordinate = full_coordinate[1];
+        second->coordinate2 = full_coordinate[1];
         second->level = 2;
         second->next_list = NULL;
         second->next_level = third;
         
-        third->coordinate = full_coordinate[2];
+        third->coordinate1 = full_coordinate[0];
+        third->coordinate2 = full_coordinate[1];
+        third->coordinate3 = full_coordinate[2];
         third->level = 3;
         third->next_list = NULL;
         third->next_level = NULL;
@@ -287,7 +298,7 @@ int add(TriangleCoordNode **root, double *full_coordinate, size_t *idx) {
         
         third->index = (*idx)++;
 
-        return third->index;
+        return third;
     }
     
     create = true;
@@ -295,9 +306,9 @@ int add(TriangleCoordNode **root, double *full_coordinate, size_t *idx) {
     curr = curr->next_level;
     
     while (curr) {
-        if (curr->coordinate == full_coordinate[2]) {
+        if (curr->coordinate3 == full_coordinate[2]) {
             create = false;
-            return curr->index;
+            return curr;
         }
         prev = curr;
         curr = curr->next_list;
@@ -312,7 +323,9 @@ int add(TriangleCoordNode **root, double *full_coordinate, size_t *idx) {
             exit(-1);
         }
 
-        third->coordinate = full_coordinate[2];
+        third->coordinate1 = full_coordinate[0];
+        third->coordinate2 = full_coordinate[1];
+        third->coordinate3 = full_coordinate[2];
         third->level = 3;
         third->next_level = NULL;
         third->next_list = NULL;
@@ -322,7 +335,7 @@ int add(TriangleCoordNode **root, double *full_coordinate, size_t *idx) {
         
         third->index = (*idx)++;
 
-        return third->index;
+        return third;
     }
 }
 
@@ -331,17 +344,17 @@ void print_vertices(TriangleCoordNode *TriangleCoordNode, double *first, double 
     
     while (TriangleCoordNode) {
         if(TriangleCoordNode->level == 1){
-            *first = TriangleCoordNode->coordinate;
+            *first = TriangleCoordNode->coordinate1;
         }
         if(TriangleCoordNode->level == 2){
-            *second = TriangleCoordNode->coordinate;
+            *second = TriangleCoordNode->coordinate2;
         }
         if(TriangleCoordNode->level == 3){
             // printf("Level: %d, Coordinate: %f, %f, %f\n", TriangleCoordNode->level, *first, *second, TriangleCoordNode->coordinate);
             // printf("%5ld", TriangleCoordNode->index);
             // exit(-1);
             fprintf( fptr, "ATOM %6ld 0    PSE A   0      %6.3f  %6.3f  %6.3f  1.00  1.00           C\n", 
-                    TriangleCoordNode->index, *first, *second, TriangleCoordNode->coordinate);
+                    TriangleCoordNode->index, TriangleCoordNode->coordinate1, TriangleCoordNode->coordinate2, TriangleCoordNode->coordinate3);
         }
         print_vertices(TriangleCoordNode->next_level, first, second, fptr);
         TriangleCoordNode = TriangleCoordNode->next_list;

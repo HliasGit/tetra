@@ -30,7 +30,8 @@ void normalize_grid(Dimensions *dim, dim_t **grid, dim_t threshold){
  * @param func_ptr Function pointer to invoke dynamically the interpolation function
  */
 void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decomposition, dim_t threshold, double *origin, 
-                            void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t), Polyhedra *p) {
+                            void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t), Polyhedra *p,
+                            TriangleNode ** root) {
 
     CubeVertex *coordinates;
     StackNode *stack = NULL;
@@ -105,7 +106,13 @@ void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decompositi
                         verbose_print("        y: %f\n", triangle->v3->y);
                         verbose_print("        z: %f\n", triangle->v3->z);
 
+
+
                         push_triangle(&p, triangle, &vertex_counter);
+
+                        if(p->triangles->vert1->index == 0){
+                            *root = p->triangles;
+                        }
                         
                         // Free the triangle and its components
                         free(triangle->v1);
