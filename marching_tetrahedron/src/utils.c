@@ -289,51 +289,26 @@ void print_for_stats(Polyhedra *p){
 
 }
 
-void print_on_separate_files(Polyhedra *p, char *name){ // ONE EVERY N
+void print_on_separate_files(Polyhedra *p, char *name){
 
-    int N = 100000;
-    char file_name[100];
-
-    TriangleNode *curr = p->triangles;
-    int count = 0; 
-
-    FILE *fptr;
-
-    int file_number = 0;
-
-    // if (curr != NULL) {
-    //     printf("First triangle vertices:\n");
-    //     printf("Vertex 1: Index: %d, Coordinates: (%f, %f, %f)\n", 
-    //            curr->vert1->index, curr->vert1->coordinate1, curr->vert1->coordinate2, curr->vert1->coordinate3);
-    //     printf("Vertex 2: Index: %d, Coordinates: (%f, %f, %f)\n", 
-    //            curr->vert2->index, curr->vert2->coordinate1, curr->vert2->coordinate2, curr->vert2->coordinate3);
-    //     printf("Vertex 3: Index: %d, Coordinates: (%f, %f, %f)\n", 
-    //            curr->vert3->index, curr->vert3->coordinate1, curr->vert3->coordinate2, curr->vert3->coordinate3);
-    // } exit(-1);
-
-    int div = 0;
-
-    size_t idx = print_atoms_separated(p->triangles, name);
-    printf("IDX: %ld\n", idx);
-    print_connections_separated(p->triangles, name, idx);
+    int idxs = print_atoms_separated(p->triangles, name);
+    print_connections_separated(p->triangles, name, idxs);
 }
 
 size_t print_atoms_separated(TriangleNode *curr, char *name){
-    int N = 100000;
-    char file_name[100];
-    int min = 0;
 
+    FILE *fptr;
+    char file_name[100];
+    int N = 100000;
+    int min = 0;
     int count = 0; 
+    int div = 0;
+    int file_number = 0;
 
     typedef struct print_list{
         struct print_list *next;
         int idx;
     } print_list;
-
-    FILE *fptr;
-
-    int file_number = 0;
-    int div = 0;
 
     while(curr != NULL){
 
@@ -347,23 +322,13 @@ size_t print_atoms_separated(TriangleNode *curr, char *name){
         }
 
         if(count/N == 0){
-            div = -1;
+            div = 0;
         } else {
-            div = 48950;
+            div = 48951;
         }
         
         char str[500];
-        // snprintf(str, sizeof(str), "ATOM  %6d 0    PSE A   0      %6.3f  %6.3f  %6.3f  1.00  1.00           C\n", 
-        //         curr->vert1->index-div, curr->vert1->coordinate1, curr->vert1->coordinate2, curr->vert1->coordinate3);
-        // snprintf(str + strlen(str), sizeof(str) - strlen(str), "ATOM  %6d 0    PSE A   0      %6.3f  %6.3f  %6.3f  1.00  1.00           C\n", 
-        //         curr->vert2->index-div, curr->vert2->coordinate1, curr->vert2->coordinate2, curr->vert2->coordinate3);
-        // snprintf(str + strlen(str), sizeof(str) - strlen(str), "ATOM  %6d 0    PSE A   0      %6.3f  %6.3f  %6.3f  1.00  1.00           C\n", 
-        //         curr->vert3->index-div, curr->vert3->coordinate1, curr->vert3->coordinate2, curr->vert3->coordinate3);
-    
-        // fprintf(fptr, "%s", str);
-
-        // Add the indexes to the list if not already present and write them
-        static print_list *start = NULL; // Declare start as static to persist across calls
+        static print_list *start = NULL;
         print_list *temp = start;
         int found1 = 0, found2 = 0, found3 = 0;
 
@@ -442,18 +407,6 @@ void print_connections_separated(TriangleNode *curr, char *name, int div){
 
     int file_number = 0;
 
-    // if (curr != NULL) {
-    //     printf("First triangle vertices:\n");
-    //     printf("Vertex 1: Index: %d, Coordinates: (%f, %f, %f)\n", 
-    //            curr->vert1->index, curr->vert1->coordinate1, curr->vert1->coordinate2, curr->vert1->coordinate3);
-    //     printf("Vertex 2: Index: %d, Coordinates: (%f, %f, %f)\n", 
-    //            curr->vert2->index, curr->vert2->coordinate1, curr->vert2->coordinate2, curr->vert2->coordinate3);
-    //     printf("Vertex 3: Index: %d, Coordinates: (%f, %f, %f)\n", 
-    //            curr->vert3->index, curr->vert3->coordinate1, curr->vert3->coordinate2, curr->vert3->coordinate3);
-    // } exit(-1);
-
-    // int div = 0;
-
     while(curr != NULL){
 
         if(count%N == 0){
@@ -465,12 +418,12 @@ void print_connections_separated(TriangleNode *curr, char *name, int div){
         }
 
         if(count/N == 0){
-            div = -1;
+            div = 0;
         } else {
-            div = tmp-1;
+            div = tmp;
         }
 
-        if (curr->vert1->index-div >= 9999 || curr->vert2->index-div >= 9999 || curr->vert3->index-div >= 9999) {
+        if (curr->vert1->index-div >= 10000 || curr->vert2->index-div >= 10000 || curr->vert3->index-div >= 10000) {
             count++;
             curr = curr->next;
             continue;

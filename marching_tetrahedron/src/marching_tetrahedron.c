@@ -30,13 +30,14 @@ void normalize_grid(Dimensions *dim, dim_t **grid, dim_t threshold){
  * @param func_ptr Function pointer to invoke dynamically the interpolation function
  */
 void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decomposition, dim_t threshold, double *origin, 
-                            void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t), Polyhedra *p,
-                            TriangleNode ** root) {
+                            void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t), Polyhedra *p) {
 
     CubeVertex *coordinates;
     StackNode *stack = NULL;
-    size_t vertex_counter = 0;
+    size_t vertex_counter = 1;
     size_t triangle_counter = 0;
+
+    TriangleNode *root = NULL;
 
     // for every cube in the space
     for (size_t i=0; i<dim->x_dim-1; i++){
@@ -111,7 +112,7 @@ void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decompositi
                         push_triangle(&p, triangle, &vertex_counter);
 
                         if(p->triangles->vert1->index == 0){
-                            *root = p->triangles;
+                            root = p->triangles;
                         }
                         
                         // Free the triangle and its components
@@ -140,6 +141,10 @@ void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decompositi
 
                             push_triangle(&p, triangle, &vertex_counter);
 
+                            if(p->triangles->vert1->index == 0){
+                                root = p->triangles;
+                            }
+
                             // Free the triangle and its components
                             free(triangle->v1);
                             free(triangle->v2);
@@ -156,6 +161,8 @@ void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decompositi
             }
         }
     }
+
+    p->triangles = root;
     
     printf("# of triangles: %8d\n", triangle_counter);
     printf("# of vertices:  %8d\n", vertex_counter);

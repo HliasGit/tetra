@@ -35,9 +35,7 @@ int main(){
     p.vertices = NULL;
     p.root = NULL;
 
-    TriangleNode *root;
-
-    marching_tetrahedra(&dim, &grid, cube_decomposition, threshold, origin, interpolation_function, &p, &root);
+    marching_tetrahedra(&dim, &grid, cube_decomposition, threshold, origin, interpolation_function, &p);
 
     if (p.triangles == NULL) {
         fprintf(stderr, "No triangles have been generated\n");
@@ -49,7 +47,6 @@ int main(){
         exit(-1);
     }
 
-    p.triangles = root;
     // print_on_file(&p, name_original);
     // print_for_stats(&p);
     print_on_separate_files(&p, name_original);
