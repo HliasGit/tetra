@@ -151,13 +151,8 @@ void push_triangle(Polyhedra **p, Triangle *triangle, size_t *vertex_counter){
     verbose_print("Added new triangle:\n");
     verbose_print("    Vertices: %ld, %ld, %ld\n", new->vert1, new->vert2, new->vert3);
 
-
-    if ((*p)->triangles == NULL) {
-        (*p)->triangles = new;
-    } else {
-        (*p)->triangles->next = new;
-        (*p)->triangles = (*p)->triangles->next;
-    }
+    new->next = (*p)->triangles;
+    (*p)->triangles = new;
 }
 
 void print_triangle_list(TriangleNode *start){
@@ -375,4 +370,29 @@ void free_list(TriangleNode *start){
         start = start->next;
         free(curr);
     }
+}
+
+void reverse_list(TriangleNode **head){
+    if(head == NULL){
+        fprintf(stderr, "empty triangles");
+        exit(-1);
+    }
+
+    if ((*head)->next == NULL){
+        fprintf(stderr, "only one triangle");
+        exit(-1);
+    }
+
+    TriangleNode *original_head = (*head);
+    TriangleNode *curr = (*head)->next;
+    TriangleNode *next = curr->next;
+
+    while(next != NULL){
+        curr->next = (*head);
+        (*head) = curr;
+        curr = next;
+        next = next->next;
+    }
+    
+    original_head->next = NULL;
 }

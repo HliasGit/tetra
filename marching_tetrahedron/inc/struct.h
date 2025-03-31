@@ -16,5 +16,6 @@ TriangleCoordNode *add(TriangleCoordNode **root, double *full_coordinate, size_t
 void print_vertices(TriangleCoordNode *TriangleCoordNode, double *first, double *second, FILE *fptr);
 void free_tree(TriangleCoordNode *TriangleCoordNode);
 void free_list(TriangleNode *start);
+void reverse_list(TriangleNode **head);  
 
 #endif // STRUCT_H

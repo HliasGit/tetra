@@ -37,8 +37,6 @@ void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decompositi
     size_t vertex_counter = 1;
     size_t triangle_counter = 0;
 
-    TriangleNode *root = NULL;
-
     // for every cube in the space
     for (size_t i=0; i<dim->x_dim-1; i++){
         for (size_t j=0; j<dim->y_dim-1; j++){
@@ -110,10 +108,6 @@ void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decompositi
 
 
                         push_triangle(&p, triangle, &vertex_counter);
-
-                        if(p->triangles->vert1->index == 0){
-                            root = p->triangles;
-                        }
                         
                         // Free the triangle and its components
                         free(triangle->v1);
@@ -141,10 +135,6 @@ void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decompositi
 
                             push_triangle(&p, triangle, &vertex_counter);
 
-                            if(p->triangles->vert1->index == 0){
-                                root = p->triangles;
-                            }
-
                             // Free the triangle and its components
                             free(triangle->v1);
                             free(triangle->v2);
@@ -162,7 +152,7 @@ void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decompositi
         }
     }
 
-    p->triangles = root;
+    reverse_list(&p->triangles);
     
     printf("# of triangles: %8d\n", triangle_counter);
     printf("# of vertices:  %8d\n", vertex_counter);
