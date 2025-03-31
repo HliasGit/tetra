@@ -7,7 +7,7 @@ int main(){
     Dimensions dim;
 
     char folder_name[100] = "/home/elia/tesi/code/marching_tetrahedron/test/data/";
-    char name[100] = "ala_eddi";
+    char name[100] = "8z9k";
     char name_original[100];
     strcpy(name_original, name);
     char *path = strcat(folder_name, strcat(name, ".bin"));
@@ -35,7 +35,10 @@ int main(){
     p.vertices = NULL;
     p.root = NULL;
 
-    marching_tetrahedra(&dim, &grid, cube_decomposition, threshold, origin, interpolation_function, &p);
+    size_t triangles_count;
+
+    marching_tetrahedra(&dim, &grid, cube_decomposition, threshold, origin,
+                        interpolation_function, &p, &triangles_count);
 
     if (p.triangles == NULL) {
         fprintf(stderr, "No triangles have been generated\n");
@@ -49,7 +52,7 @@ int main(){
 
     // print_on_file(&p, name_original);
     // print_for_stats(&p);
-    print_on_separate_files(&p, name_original);
+    print_on_separate_files(&p, name_original, triangles_count);
 
     free(grid),
     free_tree(p.root);

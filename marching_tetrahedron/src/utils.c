@@ -289,26 +289,67 @@ void print_for_stats(Polyhedra *p){
 
 }
 
-void print_on_separate_files(Polyhedra *p, char *name){
+void print_on_separate_files(Polyhedra *p, char *name, int num_triangles){
 
-    int idxs = print_atoms_separated(p->triangles, name);
+    int *idxs = print_atoms_separated(p->triangles, name, num_triangles);
     print_connections_separated(p->triangles, name, idxs);
 }
 
-size_t print_atoms_separated(TriangleNode *curr, char *name){
+int *print_atoms_separated(TriangleNode *curr, char *name, int num_traingles){
 
     FILE *fptr;
     char file_name[100];
-    int N = 100000;
+    int N = 50000;
     int min = 0;
     int count = 0; 
     int div = 0;
     int file_number = 0;
+    int *offset = (int *)malloc((num_traingles/N + 1) * sizeof(int));
+
+    if (offset == NULL) {
+        fprintf(stderr, "Memory allocation failed for offset array\n");
+        exit(-1);
+    }
+
+    printf("number of offetes: %d\n", num_traingles/N + 1);
 
     typedef struct print_list{
         struct print_list *next;
         int idx;
     } print_list;
+
+    TriangleNode *counter = curr;
+
+    while(counter != NULL){
+
+        if((count+1)%N == 0 || counter->next == NULL){
+            offset[(int)(count/N)] = min;
+            printf("count: %d\n", count);
+            min = 0;
+        }
+
+        if(count / N != 0){
+            if (min == 0 || counter->vert1->index < min) {
+            min = counter->vert1->index;
+            }
+            if (counter->vert2->index < min) {
+            min = counter->vert2->index;
+            }
+            if (counter->vert3->index < min) {
+            min = counter->vert3->index;
+            }
+        }
+
+        count++;
+        counter = counter->next;
+    }
+
+    for (int i = 0; i < 2; i++) {
+        printf("Offset[%d]: %d\n", i, offset[i]);
+    }
+
+    count = 0;
+    print_list *start = NULL;
 
     while(curr != NULL){
 
@@ -319,16 +360,12 @@ size_t print_atoms_separated(TriangleNode *curr, char *name){
             sprintf(file_name + strlen(file_name), "_%d", file_number);
             strcat(file_name, ".pdb");
             fptr = fopen(file_name, "w");
+            start = NULL;
         }
 
-        if(count/N == 0){
-            div = 0;
-        } else {
-            div = 48951;
-        }
+        div = offset[count/N];
         
         char str[500];
-        static print_list *start = NULL;
         print_list *temp = start;
         int found1 = 0, found2 = 0, found3 = 0;
 
@@ -372,38 +409,32 @@ size_t print_atoms_separated(TriangleNode *curr, char *name){
             fprintf(fptr, "%s", str);
         }
 
-
-        if (count / N != 0) {
-            if (min == 0 || curr->vert1->index < min) {
-            min = curr->vert1->index;
-            }
-            if (curr->vert2->index < min) {
-            min = curr->vert2->index;
-            }
-            if (curr->vert3->index < min) {
-            min = curr->vert3->index;
-            }
-        }
-
         count++;
         curr = curr->next;
         if(count%N == 0 || curr == NULL){
+            // Free the dynamically allocated start list
+            while (start != NULL) {
+                print_list *temp = start;
+                start = start->next;
+                free(temp);
+            }
             fclose(fptr);
         }
     }
+
     printf("Counts in the end: %d\n", count);
-    return min;
+    return offset;
 }
 
-void print_connections_separated(TriangleNode *curr, char *name, int div){
-    int N = 100000;
+void print_connections_separated(TriangleNode *curr, char *name, int *offsets){
+    int N = 50000;
     char file_name[100];
 
     int count = 0; 
 
     FILE *fptr;
 
-    int tmp = div;
+    int div = 0;
 
     int file_number = 0;
 
@@ -417,11 +448,7 @@ void print_connections_separated(TriangleNode *curr, char *name, int div){
             fptr = fopen(file_name, "a");
         }
 
-        if(count/N == 0){
-            div = 0;
-        } else {
-            div = tmp;
-        }
+        div = offsets[count/N];
 
         if (curr->vert1->index-div >= 10000 || curr->vert2->index-div >= 10000 || curr->vert3->index-div >= 10000) {
             count++;

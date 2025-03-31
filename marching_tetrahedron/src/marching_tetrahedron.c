@@ -30,12 +30,13 @@ void normalize_grid(Dimensions *dim, dim_t **grid, dim_t threshold){
  * @param func_ptr Function pointer to invoke dynamically the interpolation function
  */
 void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decomposition, dim_t threshold, double *origin, 
-                            void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t), Polyhedra *p) {
+                            void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t), Polyhedra *p,
+                            size_t *triangle_counter) {
 
     CubeVertex *coordinates;
     StackNode *stack = NULL;
     size_t vertex_counter = 1;
-    size_t triangle_counter = 0;
+    (*triangle_counter) = 0;
 
     // for every cube in the space
     for (size_t i=0; i<dim->x_dim-1; i++){
@@ -90,7 +91,7 @@ void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decompositi
                         // build the triangle 
                         Triangle *triangle = make_triangle(stack, pairs, false, threshold, func_ptr);
                         
-                        triangle_counter++;
+                        (*triangle_counter)++;
                         verbose_print("Triangle #%d\n", *triangle_counter);
                         verbose_print("    vertex 1:\n");
                         verbose_print("        x: %f\n", triangle->v1->x);
@@ -118,7 +119,7 @@ void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decompositi
                         if(action_value==7 ? true:false){
                             Triangle *triangle = make_triangle(stack, pairs, action_value==7 ? true:false, threshold, func_ptr);
                         
-                            triangle_counter++;
+                            (*triangle_counter)++;
                             verbose_print("Triangle #%d\n", *triangle_counter);
                             verbose_print("    vertex 1:\n");
                             verbose_print("        x: %f\n", triangle->v1->x);
@@ -141,7 +142,7 @@ void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decompositi
                             free(triangle->v3);
                             free(triangle);
                         }
-                        verbose_print("%d, %d \n", triangle_counter, action_value);
+                        verbose_print("%d, %d \n", (*triangle_counter), action_value);
                     }
 
                     free(pairs);
@@ -154,8 +155,8 @@ void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decompositi
 
     reverse_list(&p->triangles);
     
-    printf("# of triangles: %8d\n", triangle_counter);
-    printf("# of vertices:  %8d\n", vertex_counter);
+    printf("# of triangles: %8zu\n", (*triangle_counter));
+    printf("# of vertices:  %8zu\n", vertex_counter);
 }
 
 /**
