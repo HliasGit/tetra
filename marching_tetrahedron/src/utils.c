@@ -261,26 +261,27 @@ void print_for_stats(Polyhedra *p){
 
     FILE *fptr;
     fptr = fopen("stats.csv", "w");
+    fprintf(fptr, "first,second\n");
 
     TriangleNode *curr2 = p->triangles;
 
     while(curr2 != NULL){
         if (curr2->vert1 < curr2->vert2) {
-            fprintf(fptr, "%8d,%8d\n", curr2->vert1, curr2->vert2);
+            fprintf(fptr, "%8d,%8d\n", curr2->vert1->index, curr2->vert2->index);
         } else {
-            fprintf(fptr, "%8d,%8d\n", curr2->vert2, curr2->vert1);
+            fprintf(fptr, "%8d,%8d\n", curr2->vert2->index, curr2->vert1->index);
         }
         
         if (curr2->vert2 < curr2->vert3) {
-            fprintf(fptr, "%8d,%8d\n", curr2->vert2, curr2->vert3);
+            fprintf(fptr, "%8d,%8d\n", curr2->vert2->index, curr2->vert3->index);
         } else {
-            fprintf(fptr, "%8d,%8d\n", curr2->vert3, curr2->vert2);
+            fprintf(fptr, "%8d,%8d\n", curr2->vert3->index, curr2->vert2->index);
         }
         
         if (curr2->vert3 < curr2->vert1) {
-            fprintf(fptr, "%8d,%8d\n", curr2->vert3, curr2->vert1);
+            fprintf(fptr, "%8d,%8d\n", curr2->vert3->index, curr2->vert1->index);
         } else {
-            fprintf(fptr, "%8d,%8d\n", curr2->vert1, curr2->vert3);
+            fprintf(fptr, "%8d,%8d\n", curr2->vert1->index, curr2->vert3->index);
         }
         curr2 = curr2->next;
     }
@@ -299,7 +300,7 @@ int *print_atoms_separated(TriangleNode *curr, char *name, int num_traingles){
 
     FILE *fptr;
     char file_name[100];
-    int N = 50000;
+    int N = 2500;
     int min = 0;
     int count = 0; 
     int div = 0;
@@ -344,7 +345,7 @@ int *print_atoms_separated(TriangleNode *curr, char *name, int num_traingles){
         counter = counter->next;
     }
 
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < (num_traingles/N + 1); i++) {
         printf("Offset[%d]: %d\n", i, offset[i]);
     }
 
@@ -427,10 +428,12 @@ int *print_atoms_separated(TriangleNode *curr, char *name, int num_traingles){
 }
 
 void print_connections_separated(TriangleNode *curr, char *name, int *offsets){
-    int N = 50000;
+    int N = 2500;
     char file_name[100];
 
     int count = 0; 
+
+    int missed = 0;
 
     FILE *fptr;
 
@@ -453,6 +456,7 @@ void print_connections_separated(TriangleNode *curr, char *name, int *offsets){
         if (curr->vert1->index-div >= 10000 || curr->vert2->index-div >= 10000 || curr->vert3->index-div >= 10000) {
             count++;
             curr = curr->next;
+            missed++;
             continue;
         }
         
@@ -480,5 +484,8 @@ void print_connections_separated(TriangleNode *curr, char *name, int *offsets){
             fclose(fptr);
         }
     }
+
+    free(offsets);
+    printf("MISSED: %d\n", missed);
     printf("Counts in the end: %d\n", count);
 }
