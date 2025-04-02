@@ -11,8 +11,8 @@ void print_stack(StackNode *start);
 void merge_files(char *atoms, char* conn);
 void print_on_file(Polyhedra *p, char *name);
 void print_for_stats(Polyhedra *p);
-void print_on_separate_files(Polyhedra *p, char *name, int num_traingles);
-int *print_atoms_separated(TriangleNode *curr, char *name, int num_traingles);
-void print_connections_separated(TriangleNode *curr, char *name, int *offsets);
+void print_on_separate_files(Polyhedra *p, char *molecule_name, char* molecule_path, int num_traingles);
+int *print_atoms_separated(TriangleNode *curr, char *molecule_name, char* result_path, int num_traingles);
+void print_connections_separated(TriangleNode *curr, char *molecule_name, char* result_path, int *offsets);
 
 #endif // UTILS_H

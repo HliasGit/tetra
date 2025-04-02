@@ -1,5 +1,7 @@
 #include "utils.h"
 #include "struct.h"
+#include <sys/stat.h>
+#include <string.h>
 
 /**
  * @brief Reads a file and initializes the tensor data (linearized) structure along with its dimensions and origin.
@@ -290,16 +292,28 @@ void print_for_stats(Polyhedra *p){
 
 }
 
-void print_on_separate_files(Polyhedra *p, char *name, int num_triangles){
+void print_on_separate_files(Polyhedra *p, char *molecule_name, char *molecule_path, int num_triangles){
 
-    int *idxs = print_atoms_separated(p->triangles, name, num_triangles);
-    print_connections_separated(p->triangles, name, idxs);
+    struct stat st;
+
+    char *folder = "../../results/";
+    strcat(molecule_path, folder);
+    strcat(molecule_path, molecule_name);
+
+    if (stat(molecule_path, &st) == -1) {
+        mkdir(molecule_path, 0700);
+    }
+
+    strcat(molecule_path, "/");
+
+    int *idxs = print_atoms_separated(p->triangles, molecule_name, molecule_path, num_triangles);
+    print_connections_separated(p->triangles, molecule_name, molecule_path, idxs);
 }
 
-int *print_atoms_separated(TriangleNode *curr, char *name, int num_traingles){
+int *print_atoms_separated(TriangleNode *curr, char *molecule_name, char *result_path, int num_traingles){
 
     FILE *fptr;
-    char file_name[100];
+    char file_name[200];
     int N = 2500;
     int min = 0;
     int count = 0; 
@@ -312,7 +326,10 @@ int *print_atoms_separated(TriangleNode *curr, char *name, int num_traingles){
         exit(-1);
     }
 
-    printf("number of offetes: %d\n", num_traingles/N + 1);
+    printf(result_path);
+    printf("\n");
+
+    printf("Number of files afbafub: %d\n", num_traingles/N + 1);
 
     typedef struct print_list{
         struct print_list *next;
@@ -325,7 +342,7 @@ int *print_atoms_separated(TriangleNode *curr, char *name, int num_traingles){
 
         if((count+1)%N == 0 || counter->next == NULL){
             offset[(int)(count/N)] = min;
-            printf("count: %d\n", count);
+            // printf("count: %d\n", count);
             min = 0;
         }
 
@@ -345,9 +362,9 @@ int *print_atoms_separated(TriangleNode *curr, char *name, int num_traingles){
         counter = counter->next;
     }
 
-    for (int i = 0; i < (num_traingles/N + 1); i++) {
-        printf("Offset[%d]: %d\n", i, offset[i]);
-    }
+    // for (int i = 0; i < (num_traingles/N + 1); i++) {
+    //     printf("Offset[%d]: %d\n", i, offset[i]);
+    // }
 
     count = 0;
     print_list *start = NULL;
@@ -355,12 +372,17 @@ int *print_atoms_separated(TriangleNode *curr, char *name, int num_traingles){
     while(curr != NULL){
 
         if(count%N == 0){
-            strcpy(file_name, name);
+
+            // printf("QUI");
+            
+            strcpy(file_name, result_path);
+            strcat(file_name, molecule_name);
             file_number = count/N;
             div = count;
             sprintf(file_name + strlen(file_name), "_%d", file_number);
             strcat(file_name, ".pdb");
             fptr = fopen(file_name, "w");
+            // printf("File name: %s", file_name);
             start = NULL;
         }
 
@@ -427,9 +449,9 @@ int *print_atoms_separated(TriangleNode *curr, char *name, int num_traingles){
     return offset;
 }
 
-void print_connections_separated(TriangleNode *curr, char *name, int *offsets){
+void print_connections_separated(TriangleNode *curr, char *molecule_name, char *result_path, int *offsets){
     int N = 2500;
-    char file_name[100];
+    char file_name[200];
 
     int count = 0; 
 
@@ -444,7 +466,8 @@ void print_connections_separated(TriangleNode *curr, char *name, int *offsets){
     while(curr != NULL){
 
         if(count%N == 0){
-            strcpy(file_name, name);
+            strcpy(file_name, result_path);
+            strcat(file_name, molecule_name);
             file_number = count/N;
             sprintf(file_name + strlen(file_name), "_%d", file_number);
             strcat(file_name, ".pdb");

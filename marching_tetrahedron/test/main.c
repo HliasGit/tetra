@@ -3,19 +3,41 @@
 #include "utils.h"
 #include "marching_tetrahedron.h"
 
-int main(){
+int main(int argc, char *argv[]) {
+
+    if (argc < 4) {
+        fprintf(stderr, "Usage: %s <threshold> <molecule_name> <midpoint|linear> \n", argv[0]);
+        return -1;
+    }
+
+    if(strcmp(argv[3], "midpoint") != 0 && strcmp(argv[3], "linear") != 0){
+        fprintf(stderr, "Choose among <midpoint|linear> as interpolation method \n");
+        return -1;
+    }
+
     Dimensions dim;
 
-    char folder_name[100] = "/home/elia/tesi/code/marching_tetrahedron/test/data/";
-    char name[100] = "8z9k";
-    char name_original[100];
-    strcpy(name_original, name);
-    char *path = strcat(folder_name, strcat(name, ".bin"));
-    dim_t threshold = 0.02;
-
+    char molecule_path[100] = "/home/elia/tesi/code/marching_tetrahedron/test/data/";
+    char molecule_name[100];
+    char molecule_name_original[100];
+    char molecule_path_original[100];
+    strcpy(molecule_name, argv[2]);
+    strcpy(molecule_path_original, molecule_path);
+    strcpy(molecule_name_original, molecule_name);
+    char *path = strcat(molecule_path, strcat(molecule_name, ".bin"));
+    
+    char *endptr;
+    double threshold = strtod(argv[1], &endptr);
+    if (*endptr != '\0') {
+        fprintf(stderr, "Invalid threshold value: %s\n", argv[1]);
+        return -1;
+    }
+    
     printf("Creating surface from file '");
-    printf(name);
+    printf(molecule_name);
     printf("'\nUsing threshold: %f\n", threshold);
+    
+    printf("Path to molecule file: %s\n", path);
 
     dim_t *grid;
     double origin[3];
@@ -28,7 +50,13 @@ int main(){
 
     void (*interpolation_function)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t);
 
-    interpolation_function = &midpoint_interpol;    // Choose among midpoint_interpolation and linear interpolation
+    if(strcmp(argv[3], "midpoint") == 0){
+        interpolation_function = &midpoint_interpol;
+        printf("Using mipoint interpolation\n");
+    } else {
+        interpolation_function = &linear_interpol;    
+        printf("Using linear interpolation\n");
+    }
 
     Polyhedra p;
     p.triangles = NULL;
@@ -50,9 +78,10 @@ int main(){
         exit(-1);
     }
 
-    // print_on_file(&p, name_original);
+    // print_on_file(&p, molecule_name_original);
     // print_for_stats(&p);
-    print_on_separate_files(&p, name_original, triangles_count);
+    printf("Molecule name original: %s\n", molecule_name_original);
+    print_on_separate_files(&p, molecule_name_original, molecule_path_original, triangles_count);
 
     free(grid),
     free_tree(p.root);
