@@ -60,8 +60,7 @@ int main(int argc, char *argv[]) {
 
     Polyhedra p;
     p.triangles = NULL;
-    p.vertices = NULL;
-    p.root = NULL;
+    p.root_vertices = NULL;
 
     size_t triangles_count;
 
@@ -73,18 +72,17 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
 
-    if (p.root == NULL) {
+    if (p.root_vertices == NULL) {
         fprintf(stderr, "No vertices have been generated\n");
         exit(-1);
     }
 
-    // print_on_file(&p, molecule_name_original);
     // print_for_stats(&p);
     printf("Molecule name original: %s\n", molecule_name_original);
     print_on_separate_files(&p, molecule_name_original, molecule_path_original, triangles_count);
 
     free(grid),
-    free_tree(p.root);
+    free_tree(p.root_vertices);
     free_list(p.triangles);
 
     // Print dimensions

@@ -94,12 +94,24 @@ void linear_interpol(TriangleVertex *vtx,CubeVertex *point1, CubeVertex *point2,
     vtx->z = ((coord_t)(point1->z) + ((((coord_t)point2->z - (coord_t)point1->z) / ((*val2) - (*val1))) * (threshold - (*val1))));
 }
 
+/**
+ * @brief Check if the coordinates are less than other coordintes in a lexicographic __ORDER_LITTLE_ENDIAN__
+ * 
+ * @param v1 Pointer to the first verttex
+ * @param v2 Pointer to the second vertex
+ */
 bool coordinate_less_than(TriangleVertex *v1, TriangleVertex *v2){ // LEXICOGRAPHIC ORDER
     return  (v1->x < v2->x) || 
             (v1->x == v2->x && v1->y < v2->y) || 
             (v1->x == v2->x && v1->y == v2->y && v1->z < v2->z);
 }
 
+/**
+ * @brief Check if the coordinates are equal than other coordintes in a lexicographic __ORDER_LITTLE_ENDIAN__
+ * 
+ * @param v1 Pointer to the first verttex
+ * @param v2 Pointer to the second vertex
+ */
 bool coordinate_equals(TriangleVertex *v1, TriangleVertex *v2){
     return (v1->x == v2->x) && (v1->y == v2->y) && (v1->z == v2->z);
 }

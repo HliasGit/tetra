@@ -73,8 +73,7 @@ typedef struct VertexNode{
 
 typedef struct Polyhedra{
     struct TriangleNode *triangles;
-    VertexNode *vertices;
-    TriangleCoordNode *root;
+    TriangleCoordNode *root_vertices;
 } Polyhedra;
 
 

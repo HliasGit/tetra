@@ -28,10 +28,13 @@ void normalize_grid(Dimensions *dim, dim_t **grid, dim_t threshold){
  * @param threshold Value of the threshold for the isosurface
  * @param origin Pointer to the origin coordinates 
  * @param func_ptr Function pointer to invoke dynamically the interpolation function
+ * @param p Pointer to a Polyhedra data structure containing the beginning of the Triangles and Vertices data
+ * @param triangle_counter Pointer to a variable containing the number of triangles created 
  */
+
 void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decomposition, dim_t threshold, double *origin, 
-                            void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t), Polyhedra *p,
-                            size_t *triangle_counter) {
+                            void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t),
+                            Polyhedra *p, size_t *triangle_counter) {
 
     CubeVertex *coordinates;
     StackNode *stack = NULL;
@@ -66,83 +69,37 @@ void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decompositi
                                                 coordinates[idx-tetra].x*dim->z_dim*dim->y_dim],
                                         coordinates[idx-tetra]);
                     }
-                    
-                    // Print for debug
-                    verbose_call(print_stack(stack));
 
                     // get the action value
                     int action_value = get_action_value(stack, threshold);
-                    
-                    // Print for debug
-                    verbose_print("        action val: %d\n", action_value);
                     
                     // get the pairs
                     int *pairs = get_pairs(action_value);
                     
                     // Print pairs for debug
                     if(action_value!=0){
-                        verbose_print("    Pairs: ");
-                        for (int p = 0; p < (action_value == 7 ? 12 : 6); p += 2) {
-                            verbose_print("(%d, %d) ", pairs[p], pairs[p + 1]);
-                        }
-
-                        verbose_print("\n");
 
                         // build the triangle 
                         Triangle *triangle = make_triangle(stack, pairs, false, threshold, func_ptr);
-                        
                         (*triangle_counter)++;
-                        verbose_print("Triangle #%d\n", *triangle_counter);
-                        verbose_print("    vertex 1:\n");
-                        verbose_print("        x: %f\n", triangle->v1->x);
-                        verbose_print("        y: %f\n", triangle->v1->y);
-                        verbose_print("        z: %f\n", triangle->v1->z);
-                        verbose_print("    vertex 2:\n");
-                        verbose_print("        x: %f\n", triangle->v2->x);
-                        verbose_print("        y: %f\n", triangle->v2->y);
-                        verbose_print("        z: %f\n", triangle->v2->z);
-                        verbose_print("    vertex 3:\n");
-                        verbose_print("        x: %f\n", triangle->v3->x);
-                        verbose_print("        y: %f\n", triangle->v3->y);
-                        verbose_print("        z: %f\n", triangle->v3->z);
-
-
-
                         push_triangle(&p, triangle, &vertex_counter);
-                        
-                        // Free the triangle and its components
+
                         free(triangle->v1);
                         free(triangle->v2);
                         free(triangle->v3);
                         free(triangle);
 
+                        // build the second triangle in case the tetrahedra has two of them
                         if(action_value==7 ? true:false){
                             Triangle *triangle = make_triangle(stack, pairs, action_value==7 ? true:false, threshold, func_ptr);
-                        
                             (*triangle_counter)++;
-                            verbose_print("Triangle #%d\n", *triangle_counter);
-                            verbose_print("    vertex 1:\n");
-                            verbose_print("        x: %f\n", triangle->v1->x);
-                            verbose_print("        y: %f\n", triangle->v1->y);
-                            verbose_print("        z: %f\n", triangle->v1->z);
-                            verbose_print("    vertex 2:\n");
-                            verbose_print("        x: %f\n", triangle->v2->x);
-                            verbose_print("        y: %f\n", triangle->v2->y);
-                            verbose_print("        z: %f\n", triangle->v2->z);
-                            verbose_print("    vertex 3:\n");
-                            verbose_print("        x: %f\n", triangle->v3->x);
-                            verbose_print("        y: %f\n", triangle->v3->y);
-                            verbose_print("        z: %f\n", triangle->v3->z);
-
                             push_triangle(&p, triangle, &vertex_counter);
 
-                            // Free the triangle and its components
                             free(triangle->v1);
                             free(triangle->v2);
                             free(triangle->v3);
                             free(triangle);
                         }
-                        verbose_print("%d, %d \n", (*triangle_counter), action_value);
                     }
 
                     free(pairs);
@@ -153,6 +110,7 @@ void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decompositi
         }
     }
 
+    // Reverse the triangle list. Since I make it pushing from the head I have to reverse so the head has index 0
     reverse_list(&p->triangles);
     
     printf("# of triangles: %8zu\n", (*triangle_counter));
@@ -174,7 +132,8 @@ void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decompositi
  * @param coordinates Pointer to an array of CubeVertex structures where the calculated 
  *                    coordinates will be stored.
  */
-void find_coordinates(int idx, const int point, const size_t i, const size_t j, const size_t k, CubeVertex **coordinates){
+void find_coordinates(  int idx, const int point, const size_t i, const size_t j, const size_t k,
+                        CubeVertex **coordinates){
     if (point<1 || point>8){
         fprintf(stderr, "Point can't exceed 1-8");
     }

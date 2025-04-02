@@ -90,63 +90,25 @@ dim_t *get_value_by_idx(StackNode *start, int idx){
     return &ptr->owned_value;
 }
 
-int push_vertex(VertexNode **start, TriangleVertex *m_vertex, int *vertex_counter){
-    VertexNode *new = (VertexNode*) malloc(sizeof(VertexNode));
-    new->vertex = m_vertex;
-    new->next = NULL;
-
-    if(*start == NULL || coordinate_less_than(m_vertex, (*start)->vertex)){
-        (*vertex_counter)++;
-        new->idx = *vertex_counter;
-        new->next = *start;
-        *start = new;
-        return new->idx;
-    } else {
-        VertexNode *current = *start;
-        while(current->next != NULL && coordinate_less_than(current->next->vertex, m_vertex)){
-            current = current->next;
-        }
-        if(current->next != NULL){
-            current = current->next;
-        }
-        if(!coordinate_equals(current->vertex, m_vertex)){
-            (*vertex_counter)++;
-            new->idx = *vertex_counter;
-            new->next = current->next;
-            current->next = new;
-            return new->idx;
-        } else {
-            return current->idx;
-        }
-    }
-}
-
-void print_vertex_list(VertexNode *start){
-    int count = 0;
-    while(start != NULL){
-        printf("    Vertex %d:\n", start->idx);
-        printf("        x: %f\n", start->vertex->x);
-        printf("        y: %f\n", start->vertex->y);
-        printf("        z: %f\n", start->vertex->z);
-        
-        start = start->next;
-    }
-}
-
+/**
+ * @brief Push a triangle to the polyhedra data structure
+ * 
+ * Create the triangle node from the triangle. Push it into the triangle list
+ * 
+ * @param p Pointer to Pointer to the polyhedra
+ * @param triangle Pointer to the triangle to be pushed
+ * @param vertex_counter Pointer to the global vertex counter variable
+ */
 void push_triangle(Polyhedra **p, Triangle *triangle, size_t *vertex_counter){
     TriangleNode *new = (TriangleNode*) malloc(sizeof(TriangleNode));
-
-    // new->vert1 = push_vertex(&(*p)->vertices, triangle->v1, &(*vertex_counter));
-    // new->vert2 = push_vertex(&(*p)->vertices, triangle->v2, &(*vertex_counter));
-    // new->vert3 = push_vertex(&(*p)->vertices, triangle->v3, &(*vertex_counter));
 
     double coord1[] = {triangle->v1->x, triangle->v1->y, triangle->v1->z};
     double coord2[] = {triangle->v2->x, triangle->v2->y, triangle->v2->z};
     double coord3[] = {triangle->v3->x, triangle->v3->y, triangle->v3->z};
 
-    new->vert1 = add(&(*p)->root, coord1, &(*vertex_counter));
-    new->vert2 = add(&(*p)->root, coord2, &(*vertex_counter));
-    new->vert3 = add(&(*p)->root, coord3, &(*vertex_counter));
+    new->vert1 = add(&(*p)->root_vertices, coord1, &(*vertex_counter));
+    new->vert2 = add(&(*p)->root_vertices, coord2, &(*vertex_counter));
+    new->vert3 = add(&(*p)->root_vertices, coord3, &(*vertex_counter));
 
     verbose_print("Added new triangle:\n");
     verbose_print("    Vertices: %ld, %ld, %ld\n", new->vert1, new->vert2, new->vert3);
@@ -155,20 +117,14 @@ void push_triangle(Polyhedra **p, Triangle *triangle, size_t *vertex_counter){
     (*p)->triangles = new;
 }
 
-void print_triangle_list(TriangleNode *start){
-    int count = 0;
-    while(start != NULL){
-        count++;
-        printf("Triangle %d\n", count);
-        printf("    Vertex:\n");
-        printf("        x: %d\n", start->vert1);
-        printf("        y: %d\n", start->vert2);
-        printf("        z: %d\n", start->vert3);
-        
-        start = start->next;
-    }
-}
-
+/**
+ * @brief Create the coordinate in a unique way and link it to the suffix tree that keeps the vertices. Returns
+ *              the address of the created object
+ * 
+ * @param root Pointer to Pointer to the beginning of the vertices data structure
+ * @param full_coordinate Pointer to the array containing the 3 coordinates of the triangle
+ * @param idx Pointer to the variable of the unique idxs. Needed for the global uniqueness
+ */
 TriangleCoordNode* add(TriangleCoordNode **root, double *full_coordinate, size_t *idx) {
     if (*root == NULL) {
         // printf("Generating root block\n");
@@ -199,7 +155,6 @@ TriangleCoordNode* add(TriangleCoordNode **root, double *full_coordinate, size_t
         third->next_level = NULL;
         third->index = (*idx)++;
 
-        // printf("Block root coordinates: %d -> %d -> %d\n", first->coordinate, second->coordinate, third->coordinate);
         *root = first;
         return third;
     }
@@ -245,7 +200,6 @@ TriangleCoordNode* add(TriangleCoordNode **root, double *full_coordinate, size_t
         third->next_list = NULL;
         third->next_level = NULL;
 
-        // printf("Block coordinates: %d -> %d -> %d\n", first->coordinate, second->coordinate, third->coordinate);
         if (prev) prev->next_list = first;
 
         third->index = (*idx)++;
@@ -288,7 +242,6 @@ TriangleCoordNode* add(TriangleCoordNode **root, double *full_coordinate, size_t
         third->next_list = NULL;
         third->next_level = NULL;
 
-        // printf("Block coordinates: %d -> %d\n", second->coordinate, third->coordinate);
         if (prev) prev->next_list = second;
         
         third->index = (*idx)++;
@@ -325,7 +278,6 @@ TriangleCoordNode* add(TriangleCoordNode **root, double *full_coordinate, size_t
         third->next_level = NULL;
         third->next_list = NULL;
 
-        // printf("Block coordinate: %d\n", third->coordinate);
         if (prev) prev->next_list = third;
         
         third->index = (*idx)++;
@@ -334,28 +286,11 @@ TriangleCoordNode* add(TriangleCoordNode **root, double *full_coordinate, size_t
     }
 }
 
-void print_vertices(TriangleCoordNode *TriangleCoordNode, double *first, double *second, FILE *fptr) {
-    if (TriangleCoordNode == NULL) return;
-    
-    while (TriangleCoordNode) {
-        if(TriangleCoordNode->level == 1){
-            *first = TriangleCoordNode->coordinate1;
-        }
-        if(TriangleCoordNode->level == 2){
-            *second = TriangleCoordNode->coordinate2;
-        }
-        if(TriangleCoordNode->level == 3){
-            // printf("Level: %d, Coordinate: %f, %f, %f\n", TriangleCoordNode->level, *first, *second, TriangleCoordNode->coordinate);
-            // printf("%5ld", TriangleCoordNode->index);
-            // exit(-1);
-            fprintf( fptr, "ATOM %6ld 0    PSE A   0      %6.3f  %6.3f  %6.3f  1.00  1.00           C\n", 
-                    TriangleCoordNode->index, TriangleCoordNode->coordinate1, TriangleCoordNode->coordinate2, TriangleCoordNode->coordinate3);
-        }
-        print_vertices(TriangleCoordNode->next_level, first, second, fptr);
-        TriangleCoordNode = TriangleCoordNode->next_list;
-    }
-}
-
+/**
+ * @brief free the suffix tree containing the unique vertices
+ * 
+ * @param TriangleCoordNode Pointer to the beginning of the tree
+ */
 void free_tree(TriangleCoordNode *TriangleCoordNode) {
     if (TriangleCoordNode == NULL) return;
     free_tree(TriangleCoordNode->next_level);
@@ -363,6 +298,11 @@ void free_tree(TriangleCoordNode *TriangleCoordNode) {
     free(TriangleCoordNode);
 }
 
+/**
+ * @brief free the list containing the triangles
+ * 
+ * @param start Pointer to the beginning of the triangles list
+ */
 void free_list(TriangleNode *start){
     TriangleNode *curr;
     while(start != NULL){
@@ -372,6 +312,14 @@ void free_list(TriangleNode *start){
     }
 }
 
+/**
+ * @brief reverse the TriangleNode list
+ * 
+ * Needed because that list is populated pushing in head the new data, with increasing idx.
+ * I need it with the head pointing the id 0.
+ * 
+ * @param head Pointer to Pointer to the head of the list 
+ */
 void reverse_list(TriangleNode **head){
     if(head == NULL){
         fprintf(stderr, "empty triangles");
