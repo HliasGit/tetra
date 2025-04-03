@@ -56,6 +56,7 @@ typedef struct TriangleCoordNode {
     struct TriangleCoordNode* next_list;
     struct TriangleCoordNode* next_level;
     size_t index;
+    size_t local_index;
 } TriangleCoordNode;
 
 typedef struct TriangleNode{

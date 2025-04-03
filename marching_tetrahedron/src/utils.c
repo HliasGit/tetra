@@ -1,7 +1,5 @@
 #include "utils.h"
 #include "struct.h"
-#include <sys/stat.h>
-#include <string.h>
 
 /**
  * @brief Reads a file and initializes the tensor data (linearized) structure along with its dimensions and origin.
@@ -139,8 +137,8 @@ void print_on_separate_files(Polyhedra *p, char *molecule_name, char *molecule_p
 
     strcat(molecule_path, "/");
 
-    int *idxs = print_atoms_separated(p->triangles, molecule_name, molecule_path, num_triangles);
-    print_connections_separated(p->triangles, molecule_name, molecule_path, idxs);
+    print_atoms_connections_separated(p->triangles, molecule_name, molecule_path, num_triangles);
+    // print_connections_separated(p->triangles, molecule_name, molecule_path, idxs);
 }
 
 /**
@@ -153,71 +151,35 @@ void print_on_separate_files(Polyhedra *p, char *molecule_name, char *molecule_p
  *
  * @return Pointer to the min offsets
  */
-int *print_atoms_separated(TriangleNode *curr, char *molecule_name, char *result_path, int num_traingles){
+void print_atoms_connections_separated(TriangleNode *curr, char *molecule_name, char *result_path, int num_traingles){
 
     FILE *fptr;
     char file_name[200];
-    int N = 2500;
+    int N = 10000;              // Best size is 10000
     int min = 0;
     int count = 0; 
     int div = 0;
     int file_number = 0;
-    int *offset = (int *)malloc((num_traingles/N + 1) * sizeof(int));
-
-    if (offset == NULL) {
-        fprintf(stderr, "Memory allocation failed for offset array\n");
-        exit(-1);
-    }
+    int missed = 0;
 
     printf(result_path);
     printf("\n");
 
-    printf("Number of files afbafub: %d\n", num_traingles/N + 1);
+    printf("Number of files: %d\n", num_traingles/N + 1);
 
     typedef struct print_list{
         struct print_list *next;
         int idx;
+        int local_counter;
     } print_list;
 
-    TriangleNode *counter = curr;
-
-    while(counter != NULL){
-
-        if((count+1)%N == 0 || counter->next == NULL){
-            offset[(int)(count/N)] = min;
-            // printf("count: %d\n", count);
-            min = 0;
-        }
-
-        if(count / N != 0){
-            if (min == 0 || counter->vert1->index < min) {
-            min = counter->vert1->index;
-            }
-            if (counter->vert2->index < min) {
-            min = counter->vert2->index;
-            }
-            if (counter->vert3->index < min) {
-            min = counter->vert3->index;
-            }
-        }
-
-        count++;
-        counter = counter->next;
-    }
-
-    // for (int i = 0; i < (num_traingles/N + 1); i++) {
-    //     printf("Offset[%d]: %d\n", i, offset[i]);
-    // }
-
     count = 0;
+    int local_counter = 0;
     print_list *start = NULL;
 
     while(curr != NULL){
 
         if(count%N == 0){
-
-            // printf("QUI");
-            
             strcpy(file_name, result_path);
             strcat(file_name, molecule_name);
             file_number = count/N;
@@ -227,9 +189,8 @@ int *print_atoms_separated(TriangleNode *curr, char *molecule_name, char *result
             fptr = fopen(file_name, "w");
             // printf("File name: %s", file_name);
             start = NULL;
+            local_counter = 0;
         }
-
-        div = offset[count/N];
         
         char str[500];
         print_list *temp = start;
@@ -245,34 +206,65 @@ int *print_atoms_separated(TriangleNode *curr, char *molecule_name, char *result
         if (!found1) {
             print_list *new_node = (print_list *)malloc(sizeof(print_list));
             new_node->idx = curr->vert1->index;
+            curr->vert1->local_index = local_counter;
+            local_counter++;
             new_node->next = start;
             start = new_node;
 
             snprintf(str, sizeof(str), "ATOM  %5d C    PSE A   1    %8.2f%8.2f%8.2f 1.00  1.00           C\n", 
-                curr->vert1->index-div, curr->vert1->coordinate1, curr->vert1->coordinate2, curr->vert1->coordinate3);
+                curr->vert1->local_index, curr->vert1->coordinate1, curr->vert1->coordinate2, curr->vert1->coordinate3);
             fprintf(fptr, "%s", str);
         }
 
         if (!found2) {
             print_list *new_node = (print_list *)malloc(sizeof(print_list));
             new_node->idx = curr->vert2->index;
+            curr->vert2->local_index = local_counter;
+            local_counter++;
             new_node->next = start;
             start = new_node;
 
             snprintf(str, sizeof(str), "ATOM  %5d C    PSE A   1    %8.2f%8.2f%8.2f 1.00  1.00           C\n", 
-                curr->vert2->index-div, curr->vert2->coordinate1, curr->vert2->coordinate2, curr->vert2->coordinate3);
+                curr->vert2->local_index, curr->vert2->coordinate1, curr->vert2->coordinate2, curr->vert2->coordinate3);
             fprintf(fptr, "%s", str);
         }
 
         if (!found3) {
             print_list *new_node = (print_list *)malloc(sizeof(print_list));
             new_node->idx = curr->vert3->index;
+            curr->vert3->local_index = local_counter;
+            local_counter++;
             new_node->next = start;
             start = new_node;
 
             snprintf(str, sizeof(str), "ATOM  %5d C    PSE A   1    %8.2f%8.2f%8.2f 1.00  1.00           C\n", 
-                curr->vert3->index-div, curr->vert3->coordinate1, curr->vert3->coordinate2, curr->vert3->coordinate3);
+                curr->vert3->local_index, curr->vert3->coordinate1, curr->vert3->coordinate2, curr->vert3->coordinate3);
             fprintf(fptr, "%s", str);
+        }
+
+        if (curr->vert1->index%N >= 10000 || curr->vert2->index%N >= 10000 || curr->vert3->index%N >= 10000) {
+            count++;
+            curr = curr->next;
+            missed++;
+            continue;
+        }
+
+        if (curr->vert1->local_index < curr->vert2->local_index) {
+            fprintf(fptr, "CONECT%5d%5d\n", curr->vert1->local_index, curr->vert2->local_index);
+        } else {
+            fprintf(fptr, "CONECT%5d%5d\n", curr->vert2->local_index, curr->vert1->local_index);
+        }
+
+        if (curr->vert2->local_index < curr->vert3->local_index) {
+            fprintf(fptr, "CONECT%5d%5d\n", curr->vert2->local_index, curr->vert3->local_index);
+        } else {
+            fprintf(fptr, "CONECT%5d%5d\n", curr->vert3->local_index, curr->vert2->local_index);
+        }
+
+        if (curr->vert3->local_index < curr->vert1->local_index) {
+            fprintf(fptr, "CONECT%5d%5d\n", curr->vert3->local_index, curr->vert1->local_index);
+        } else {
+            fprintf(fptr, "CONECT%5d%5d\n", curr->vert1->local_index, curr->vert3->local_index);
         }
 
         count++;
@@ -288,78 +280,6 @@ int *print_atoms_separated(TriangleNode *curr, char *molecule_name, char *result
         }
     }
 
-    printf("Counts in the end: %d\n", count);
-    return offset;
-}
-
-/**
- * @brief Print the connections on the splitted file
- * 
- * @param curr Pointer to the triangle list
- * @param molecule_name Ptr to the name of the molecule
- * @param result_path Ptr to the result path of the molecule
- * @param offset Pointer to array containing the min offsets
- */
-void print_connections_separated(TriangleNode *curr, char *molecule_name, char *result_path, int *offsets){
-    int N = 2500;
-    char file_name[200];
-
-    int count = 0; 
-
-    int missed = 0;
-
-    FILE *fptr;
-
-    int div = 0;
-
-    int file_number = 0;
-
-    while(curr != NULL){
-
-        if(count%N == 0){
-            strcpy(file_name, result_path);
-            strcat(file_name, molecule_name);
-            file_number = count/N;
-            sprintf(file_name + strlen(file_name), "_%d", file_number);
-            strcat(file_name, ".pdb");
-            fptr = fopen(file_name, "a");
-        }
-
-        div = offsets[count/N];
-
-        if (curr->vert1->index-div >= 10000 || curr->vert2->index-div >= 10000 || curr->vert3->index-div >= 10000) {
-            count++;
-            curr = curr->next;
-            missed++;
-            continue;
-        }
-        
-        if (curr->vert1->index < curr->vert2->index) {
-            fprintf(fptr, "CONECT%5d%5d\n", curr->vert1->index-div, curr->vert2->index-div);
-        } else {
-            fprintf(fptr, "CONECT%5d%5d\n", curr->vert2->index-div, curr->vert1->index-div);
-        }
-
-        if (curr->vert2->index < curr->vert3->index) {
-            fprintf(fptr, "CONECT%5d%5d\n", curr->vert2->index-div, curr->vert3->index-div);
-        } else {
-            fprintf(fptr, "CONECT%5d%5d\n", curr->vert3->index-div, curr->vert2->index-div);
-        }
-
-        if (curr->vert3->index < curr->vert1->index) {
-            fprintf(fptr, "CONECT%5d%5d\n", curr->vert3->index-div, curr->vert1->index-div);
-        } else {
-            fprintf(fptr, "CONECT%5d%5d\n", curr->vert1->index-div, curr->vert3->index-div);
-        }
-
-        count++;
-        curr = curr->next;
-        if(count%N == 0 || curr == NULL){
-            fclose(fptr);
-        }
-    }
-
-    free(offsets);
     printf("MISSED: %d\n", missed);
     printf("Counts in the end: %d\n", count);
 }

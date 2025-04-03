@@ -38,7 +38,7 @@ void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decompositi
 
     CubeVertex *coordinates;
     StackNode *stack = NULL;
-    size_t vertex_counter = 1;
+    size_t vertex_counter = 0;
     (*triangle_counter) = 0;
 
     // for every cube in the space
