@@ -81,6 +81,8 @@ int main(int argc, char *argv[]) {
     printf("Molecule name original: %s\n", molecule_name_original);
     print_on_separate_files(&p, molecule_name_original, molecule_path_original, triangles_count);
 
+    print_to_console_traingles(p.triangles);
+
     free(grid),
     free_tree(p.root_vertices);
     free_list(p.triangles);

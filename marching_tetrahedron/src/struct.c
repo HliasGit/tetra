@@ -7,18 +7,19 @@
  * @param value Value to be added to the stack
  * @param vert Vertex (Cube vertex) to be added to the stack
  */
-void push_into_stack(StackNode **start, dim_t value, CubeVertex vert){
+void push_into_stack(StackNode **start, dim_t value, CubeVertex vert, int point){
     StackNode *new = (StackNode*) malloc(sizeof(StackNode));
     new->owned_value = value;
     new->coordinate = vert;
+    new->point = point;
     new->next = NULL;
 
-    if(*start == NULL || (*start)->owned_value >= value) {
+    if(*start == NULL || (*start)->owned_value > value) {
         new->next = *start;
         *start = new;
     } else {
         StackNode *current = *start;
-        while(current->next != NULL && current->next->owned_value < value) {
+        while(current->next != NULL && current->next->owned_value <= value) {
             current = current->next;
         }
         new->next = current->next;
@@ -321,26 +322,26 @@ void free_list(TriangleNode *start){
  * @param head Pointer to Pointer to the head of the list 
  */
 void reverse_list(TriangleNode **head){
-    if(head == NULL){
-        fprintf(stderr, "empty triangles");
+    if(head == NULL || *head == NULL){
+        fprintf(stderr, "empty triangles\n");
         exit(-1);
     }
 
     if ((*head)->next == NULL){
-        fprintf(stderr, "only one triangle");
+        fprintf(stderr, "only one triangle\n");
         exit(-1);
     }
 
-    TriangleNode *original_head = (*head);
-    TriangleNode *curr = (*head)->next;
-    TriangleNode *next = curr->next;
+    TriangleNode *prev = NULL;
+    TriangleNode *curr = *head;
+    TriangleNode *next = NULL;
 
-    while(next != NULL){
-        curr->next = (*head);
-        (*head) = curr;
+    while (curr != NULL) {
+        next = curr->next;
+        curr->next = prev;
+        prev = curr;
         curr = next;
-        next = next->next;
     }
-    
-    original_head->next = NULL;
+
+    *head = prev;
 }

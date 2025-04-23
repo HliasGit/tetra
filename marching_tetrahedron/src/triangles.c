@@ -9,52 +9,49 @@
  * @param threshold Threshold of the isosurface
  * @param func_ptr Function pointer to invoke dynamically the function
  */
-Triangle *make_triangle(StackNode *stack, int *pairs, bool two_triangles, dim_t threshold, void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t)){
+Triangle *make_triangle(StackNode *stack, int *pairs, bool two_triangles, dim_t threshold, 
+    void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t), 
+    bool swap)
+{
+Triangle *triangle = (Triangle *)malloc(sizeof(Triangle));
 
-    Triangle *triangle = (Triangle *)malloc(sizeof(Triangle));
+triangle->v1 = (TriangleVertex *)malloc(sizeof(TriangleVertex));
+triangle->v2 = (TriangleVertex *)malloc(sizeof(TriangleVertex));
+triangle->v3 = (TriangleVertex *)malloc(sizeof(TriangleVertex));
 
-    triangle->v1 = (TriangleVertex *)malloc(sizeof(TriangleVertex));
-    triangle->v2 = (TriangleVertex *)malloc(sizeof(TriangleVertex));
-    triangle->v3 = (TriangleVertex *)malloc(sizeof(TriangleVertex));
+int start = two_triangles ? 6 : 0;
 
-    for(int idx=0; idx<6; idx+=2){
-        CubeVertex *point1 = get_coordinate_by_idx(stack, pairs[idx]-1);
-        CubeVertex *point2 = get_coordinate_by_idx(stack, pairs[idx+1]-1);
-        dim_t *val1 = get_value_by_idx(stack, pairs[idx]-1);
-        dim_t *val2 = get_value_by_idx(stack, pairs[idx+1]-1);
+for (int i = 0; i < 3; i++) {
+int idx1 = pairs[start + i*2] - 1;
+int idx2 = pairs[start + i*2 + 1] - 1;
 
-        if(idx==0){
-            func_ptr(triangle->v1, point1, point2, val1, val2, threshold);
-        }        
-        if(idx==2){
-            func_ptr(triangle->v2, point1, point2, val1, val2, threshold);
-        }
-        if(idx==4){
-            func_ptr(triangle->v3, point1, point2, val1, val2, threshold);
-        }
-    }
+CubeVertex *point1 = get_coordinate_by_idx(stack, idx1);
+CubeVertex *point2 = get_coordinate_by_idx(stack, idx2);
+dim_t *val1 = get_value_by_idx(stack, idx1);
+dim_t *val2 = get_value_by_idx(stack, idx2);
 
-    if (two_triangles)
-    {
-        for(int idx=6; idx<12; idx+=2){
-            CubeVertex *point1 = get_coordinate_by_idx(stack, pairs[idx]-1);
-            CubeVertex *point2 = get_coordinate_by_idx(stack, pairs[idx+1]-1);
-            dim_t *val1 = get_value_by_idx(stack, pairs[idx]-1);
-            dim_t *val2 = get_value_by_idx(stack, pairs[idx+1]-1);
-    
-            if(idx==6){
-                func_ptr(triangle->v1, point1, point2, val1, val2, threshold);
-            }
-            if(idx==8){
-                func_ptr(triangle->v2, point1, point2, val1, val2, threshold);
-            }
-            if(idx==10){
-                func_ptr(triangle->v3, point1, point2, val1, val2, threshold);
-            }
-        }
-    }
-    return triangle;
+switch(i) {
+case 0:
+func_ptr(triangle->v1, point1, point2, val1, val2, threshold);
+break;
+case 1:
+func_ptr(triangle->v2, point1, point2, val1, val2, threshold);
+break;
+case 2:
+func_ptr(triangle->v3, point1, point2, val1, val2, threshold);
+break;
 }
+}
+
+if (swap) {
+TriangleVertex *tmp = triangle->v1;
+triangle->v1 = triangle->v2;
+triangle->v2 = tmp;
+}
+
+return triangle;
+}
+
 
 /**
  * @brief Compute the midpoint interpolation

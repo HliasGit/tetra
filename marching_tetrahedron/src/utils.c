@@ -142,7 +142,10 @@ void print_on_separate_files(Polyhedra *p, char *molecule_name, char *molecule_p
 }
 
 /**
- * @brief Print the atoms on the splitted file
+ * @brief Print the atoms and the connections on the splitted file
+ * 
+ * The local counter is introduced to have a atom indexing for every file going 0-9999
+ * beign usable on PDB (Max idx for connections is 10000)
  * 
  * @param curr Pointer to the triangle list
  * @param molecule_name Ptr to the name of the molecule
@@ -151,11 +154,11 @@ void print_on_separate_files(Polyhedra *p, char *molecule_name, char *molecule_p
  *
  * @return Pointer to the min offsets
  */
-void print_atoms_connections_separated(TriangleNode *curr, char *molecule_name, char *result_path, int num_traingles){
+void print_atoms_connections_separated(TriangleNode *start_triangles, char *molecule_name, char *result_path, int num_traingles){
 
     FILE *fptr;
     char file_name[200];
-    int N = 10000;              // Best size is 10000
+    int N = 10000;          // N can be increased somehow
     int min = 0;
     int count = 0; 
     int div = 0;
@@ -176,6 +179,8 @@ void print_atoms_connections_separated(TriangleNode *curr, char *molecule_name, 
     count = 0;
     int local_counter = 0;
     print_list *start = NULL;
+
+    TriangleNode *curr = start_triangles;
 
     while(curr != NULL){
 
@@ -282,4 +287,17 @@ void print_atoms_connections_separated(TriangleNode *curr, char *molecule_name, 
 
     printf("MISSED: %d\n", missed);
     printf("Counts in the end: %d\n", count);
+}
+
+void print_to_console_traingles(TriangleNode* start){
+    int count = 0;
+    printf("Triangles:\n");
+    while (start != NULL) {
+        count++;
+        printf("    Triangle: %d\n", count);
+        printf("        Vertex 1: (%f, %f, %f)\n", start->vert1->coordinate1, start->vert1->coordinate2, start->vert1->coordinate3);
+        printf("        Vertex 2: (%f, %f, %f)\n", start->vert2->coordinate1, start->vert2->coordinate2, start->vert2->coordinate3);
+        printf("        Vertex 3: (%f, %f, %f)\n", start->vert3->coordinate1, start->vert3->coordinate2, start->vert3->coordinate3);
+        start = start->next;
+    }
 }

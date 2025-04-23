@@ -46,6 +46,7 @@ typedef struct StackNode{
     CubeVertex coordinate;
     dim_t owned_value;
     struct StackNode *next;
+    int point;
 } StackNode;
 
 typedef struct TriangleCoordNode {
@@ -63,14 +64,9 @@ typedef struct TriangleNode{
     TriangleCoordNode *vert1;
     TriangleCoordNode *vert2;
     TriangleCoordNode *vert3;
+    int triangle_index;
     struct TriangleNode *next;
 } TriangleNode;
-
-typedef struct VertexNode{
-    TriangleVertex *vertex;
-    struct VertexNode *next;
-    int idx;
-} VertexNode;
 
 typedef struct Polyhedra{
     struct TriangleNode *triangles;
