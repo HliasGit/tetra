@@ -127,7 +127,7 @@ void print_for_stats(Polyhedra *p){
 void print_on_separate_files(Polyhedra *p, char *molecule_name, char *molecule_path, int num_triangles){
     struct stat st;
 
-    char *folder = "../../results/";
+    char *folder = "../results/";
     strcat(molecule_path, folder);
     strcat(molecule_path, molecule_name);
 

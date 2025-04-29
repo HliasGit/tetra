@@ -39,12 +39,12 @@ void normalize_grid(Dimensions *dim, dim_t **grid, dim_t threshold)
 
 void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition, dim_t threshold, double *origin,
                          void (*func_ptr)(TriangleVertex *, CubeVertex *, CubeVertex *, dim_t *, dim_t *, dim_t),
-                         Polyhedra *p, size_t *triangle_counter)
+                         Polyhedra *p, size_t *triangle_counter, size_t *vertex_counter)
 {
 
     CubeVertex *coordinates;
     StackNode *stack = NULL;
-    size_t vertex_counter = 0;
+    (*vertex_counter) = 0;
     (*triangle_counter) = 0;
 
     size_t count_swap = 0;
@@ -66,7 +66,7 @@ void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition,
                 static size_t last_progress = 0;
                 if (progress % 10 == 0 && progress != 0 && progress != last_progress)
                 {
-                    printf("Progress: %zu%%\n", progress);
+                    printf("Progress: %zu%%\r", progress); fflush(stdout);
                     last_progress = progress;
                 }
 
@@ -78,7 +78,7 @@ void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition,
                 { // for every tetrahedron in a cube
                     bool cube_parity = parity(i, j, k);
                     coordinates = malloc(4 * sizeof(CubeVertex));
-                    printf("Tetra: %d, cube (%d,%d,%d)\n", tetra / 4 + 1, i, j, k);
+                    // printf("Tetra: %d, cube (%d,%d,%d)\n", tetra / 4 + 1, i, j, k);
 
                     for (idx = tetra; idx < tetra + 4; idx++)
                     { // for every point in a tetrahedra
@@ -105,14 +105,14 @@ void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition,
                     // Print the stack for debugging purposes
                     StackNode *current = stack;
                     int i = 0;
-                    printf("Stack contents:\n");
+                    // printf("Stack contents:\n");
                     while (current != NULL) {
-                        printf("    Value: %f, Coordinates: (%d, %d, %d), point: %d\n",
-                               current->owned_value,
-                               current->coordinate.x,
-                               current->coordinate.y,
-                               current->coordinate.z,
-                                current->point);
+                        // printf("    Value: %f, Coordinates: (%d, %d, %d), point: %d\n",
+                        //        current->owned_value,
+                        //        current->coordinate.x,
+                        //        current->coordinate.y,
+                        //        current->coordinate.z,
+                        //         current->point);
                         coordinates[i] = current->coordinate;
                         i++;
                         current = current->next;
@@ -121,13 +121,13 @@ void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition,
                     
 
                     bool is_positive_orientation = tetrahedron_determinant(coordinates);
-                    printf("TETRA DET: %d\n", is_positive_orientation);
-                    printf("CUBE parity: %d\n", parity(i, j, k));
+                    // printf("TETRA DET: %d\n", is_positive_orientation);
+                    // printf("CUBE parity: %d\n", parity(i, j, k));
 
                     // get the action value
                     int action_value = get_action_value(stack, threshold);
 
-                    printf("The latter has action value of: %d\n\n", action_value);
+                    // printf("The latter has action value of: %d\n\n", action_value);
 
                     // get the pairs
                     int *pairs = get_pairs(action_value);
@@ -138,7 +138,7 @@ void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition,
                         Triangle *triangle = make_triangle(stack, pairs, false, threshold, func_ptr, is_positive_orientation);
                         (*triangle_counter)++;
                         
-                        push_triangle(&p, triangle, &vertex_counter);
+                        push_triangle(&p, triangle, vertex_counter);
 
                         free(triangle->v1);
                         free(triangle->v2);
@@ -152,7 +152,7 @@ void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition,
                             Triangle *second_triangle = make_triangle(stack, pairs, true, threshold, func_ptr, is_positive_orientation);
                             (*triangle_counter)++;
 
-                            push_triangle(&p, second_triangle, &vertex_counter);
+                            push_triangle(&p, second_triangle, vertex_counter);
 
                             free(second_triangle->v1);
                             free(second_triangle->v2);
@@ -176,7 +176,7 @@ void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition,
     reverse_list(&p->triangles);
 
     printf("# of triangles: %8zu\n", (*triangle_counter));
-    printf("# of vertices:  %8zu\n", vertex_counter);
+    printf("# of vertices:  %8zu\n", (*vertex_counter));
     printf("# to be swapped: %8zu\n", count_swap);
     printf("# to be checked after swap: %8zu\n", re_count_swap);
 }
@@ -300,17 +300,19 @@ int get_action_value(StackNode *start, dim_t threshold)
     // printf("Threshold %f\n", threshold);
     // exit(1);
 
+    double epsilon = 1e-10;
+
     while (start != NULL)
     {
-        if (start->owned_value - threshold < 0)
+        if (start->owned_value - threshold < epsilon)
         {
             val[0]++;
         }
-        if (start->owned_value - threshold == 0)
+        if (start->owned_value - threshold == epsilon)
         {
             val[1]++;
         }
-        if (start->owned_value - threshold > 0)
+        if (start->owned_value - threshold > epsilon)
         {
             val[2]++;
         }

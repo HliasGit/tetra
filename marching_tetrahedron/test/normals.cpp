@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 
     Dimensions dim;
 
-    char molecule_path[100] = "/home/elia/tesi/code/marching_tetrahedron/test/data/";
+    char molecule_path[100] = "/home/elia/tesi/tetra/marching_tetrahedron/data/";
     char molecule_name[100];
     char molecule_name_original[100];
     char molecule_path_original[100];
@@ -119,9 +119,11 @@ int main(int argc, char *argv[])
     p.root_vertices = NULL;
 
     size_t triangles_count;
+    size_t vertex_counter;
 
     marching_tetrahedra(&dim, &grid, cube_decomposition, threshold, origin,
-                        interpolation_function, &p, &triangles_count);
+                        interpolation_function, &p, &triangles_count,
+                        &vertex_counter);
 
     if (p.triangles == NULL)
     {
