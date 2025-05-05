@@ -20,8 +20,8 @@ int main(){
     double origin_y = 50;
     double origin_z = 50;
     size_t x_d = 5;
-    size_t y_d = 5;
-    size_t z_d = 5;
+    size_t y_d = 2;
+    size_t z_d = 2;
 
     fwrite(&dx, sizeof(double), 1, fptr);
     fwrite(&dy, sizeof(double), 1, fptr);

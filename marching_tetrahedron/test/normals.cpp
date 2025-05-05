@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <iostream>
 #include <vector>
+#include <string>
 
 void make_cpp_vertex_list(TriangleCoordNode *node, std::list<TriangleVertex *> &list)
 {
@@ -121,9 +122,14 @@ int main(int argc, char *argv[])
     size_t triangles_count;
     size_t vertex_counter;
 
+    clock_t start_marching, end_marching;
+    start_marching = clock();
     marching_tetrahedra(&dim, &grid, cube_decomposition, threshold, origin,
                         interpolation_function, &p, &triangles_count,
                         &vertex_counter);
+    end_marching = clock();
+    double time_spent = (double)(end_marching - start_marching) / CLOCKS_PER_SEC;
+    printf("Took %f seconds for the marhcing tetrahedron computation\n", time_spent);
 
     if (p.triangles == NULL)
     {
@@ -140,29 +146,52 @@ int main(int argc, char *argv[])
     printf("Molecule name original: %s\n", molecule_name_original);
     print_on_separate_files(&p, molecule_name_original, molecule_path_original, triangles_count);
 
+    ////////////////////// NORMALS //////////////////////
+
+    clock_t start_normals, end_normals;
+    start_normals = clock();
+
     std::unordered_map<int, std::list<TriangleNode *>> map;
     std::unordered_map<int, TriangleVertex> normals;
     std::unordered_map<int, TriangleCoordNode *> vertices;
 
     TriangleNode *curr = p.triangles;
 
-    int index = 0;
+    int N = 99999;
+    int count = 0;
+    int file_number = 0;
 
-    FILE *pdb_file = fopen("output.pdb", "w");
+    struct stat st;
 
-    if (!pdb_file)
+    std::string folder_name =   std::string(molecule_path_original) + "normals/";
+
+    if (stat(folder_name.c_str(), &st) == -1)
     {
-        fprintf(stderr, "Failed to open output.pdb for writing\n");
-        return -1;
+        if (mkdir(folder_name.c_str(), 0700) != 0)
+        {
+            fprintf(stderr, "Failed to create directory: %s\n", folder_name.c_str());
+            return -1;
+        }
     }
+
+    std::cout << folder_name << std::endl;
+
+    FILE *fptr;
 
     while (curr != NULL)
     {
+        if(count%N == 0){
+            file_number = count/N;
+            std::string file_name = folder_name + std::to_string(file_number) + ".pdb";
+            fptr = fopen(file_name.c_str(), "w");
+        }
+
+        char str[500];
+
         TriangleVertex vtx1 = {curr->vert1->coordinate1, curr->vert1->coordinate2, curr->vert1->coordinate3};
         TriangleVertex vtx2 = {curr->vert2->coordinate1, curr->vert2->coordinate2, curr->vert2->coordinate3};
         TriangleVertex vtx3 = {curr->vert3->coordinate1, curr->vert3->coordinate2, curr->vert3->coordinate3};
 
-        // Check if the vertices are in clockwise or counterclockwise order
         TriangleVertex v1 = sub_vertices(&vtx2, &vtx1);
         TriangleVertex v2 = sub_vertices(&vtx3, &vtx1);
         TriangleVertex cross = cross_product_vertices(&v1, &v2);
@@ -175,134 +204,24 @@ int main(int argc, char *argv[])
 
         double weight = l1 + l2 + l3;
         
-
-        // if(dot_product < 0){
-
-        //     printf("DIOCANE\n");
-        //     cross.x *= -1;
-        //     cross.y *= -1;
-        //     cross.z *= -1;
-        // }
-
         double normalx = (vtx1.x + vtx2.x + vtx3.x) / 3 + (cross.x);
         double normaly = (vtx1.y + vtx2.y + vtx3.y) / 3 + (cross.y);
         double normalz = (vtx1.z + vtx2.z + vtx3.z) / 3 + (cross.z);
 
-        printf("Normal vector: (%f, %f, %f)\n", normalx, normaly, normalz);
+        // printf("Normal vector: (%f, %f, %f)\n", normalx, normaly, normalz);
 
-        fprintf(pdb_file, "ATOM  %5d  N   NOR A   1    %8.3f%8.3f%8.3f  1.00  0.00           N\n",
-                index, normalx, normaly, normalz);
+        fprintf(fptr, "ATOM  %5d  N   NOR A   1    %8.3f%8.3f%8.3f  1.00  0.00           N\n",
+                count, normalx, normaly, normalz);
 
-        index++;
+        
+        count++;
         curr = curr->next;
+        
+        if((count+1%N == 0)){
+            fclose(fptr);
+        }
     }
 
-    fclose(pdb_file);
-
-    // while(curr != NULL){
-    //     if(*std::find(map[curr->vert1->index].begin(), map[curr->vert1->index].end(), curr) == nullptr ){
-    //         map[curr->vert1->index].push_back(curr);
-    //     }
-    //     if(*std::find(map[curr->vert2->index].begin(), map[curr->vert2->index].end(), curr) == nullptr ){
-    //         map[curr->vert2->index].push_back(curr);
-    //     }
-    //     if(*std::find(map[curr->vert3->index].begin(), map[curr->vert3->index].end(), curr) == nullptr ){
-    //         map[curr->vert3->index].push_back(curr);
-    //     }
-
-    //     vertices[curr->vert1->index] = curr->vert1;
-    //     vertices[curr->vert2->index] = curr->vert2;
-    //     vertices[curr->vert3->index] = curr->vert3;
-    //     curr = curr->next;
-    // }
-
-    // // for (int i=0; i<map.size(); i++){
-    // //     printf("Triangles associated with vertex index %d:\n", i);
-    // //     for (const auto& triangle : map[i]) {
-    // //         printf("Triangle vertices coordinates: \n");
-    // //         printf("\tVertex 1: (%f, %f, %f)\n",
-    // //                triangle->vert1->coordinate1,
-    // //                triangle->vert1->coordinate2,
-    // //                triangle->vert1->coordinate3);
-    // //         printf("\tVertex 2: (%f, %f, %f)\n",
-    // //                triangle->vert2->coordinate1,
-    // //                triangle->vert2->coordinate2,
-    // //                triangle->vert2->coordinate3);
-    // //         printf("\tVertex 3: (%f, %f, %f)\n",
-    // //                triangle->vert3->coordinate1,
-    // //                triangle->vert3->coordinate2,
-    // //                triangle->vert3->coordinate3);
-    // //     }
-    // // }
-
-    // for (const auto& [index, triangles] : map) {
-    //     // Initialize the normal vector for the current index
-    //     if (normals.find(index) == normals.end()) {
-    //         normals[index] = {0.0, 0.0, 0.0};
-    //     }
-
-    //     TriangleVertex v1;
-    //     TriangleVertex v2;
-    //     TriangleVertex v3;
-    //     TriangleVertex normal1;
-    //     TriangleVertex normal2;
-    //     TriangleVertex normal3;
-
-    //     for (const auto& triangle : triangles) {
-    //         TriangleVertex vtx1 = {triangle->vert1->coordinate1, triangle->vert1->coordinate2, triangle->vert1->coordinate3};
-    //         TriangleVertex vtx2 = {triangle->vert2->coordinate1, triangle->vert2->coordinate2, triangle->vert2->coordinate3};
-    //         TriangleVertex vtx3 = {triangle->vert3->coordinate1, triangle->vert3->coordinate2, triangle->vert3->coordinate3};
-    //         v1 = sub_vertices(&vtx2, &vtx3);
-    //         v2 = sub_vertices(&vtx3, &vtx1);
-    //         v3 = sub_vertices(&vtx1, &vtx2);
-    //         normal1 = cross_product_vertices(&v2, &v3);
-    //         normal2 = cross_product_vertices(&v3, &v1);
-    //         normal3 = cross_product_vertices(&v1, &v2);
-
-    //         printf("Normal 1: (%f, %f, %f)\n", normal1.x, normal1.y, normal1.z);
-    //         printf("Normal 2: (%f, %f, %f)\n", normal2.x, normal2.y, normal2.z);
-    //         printf("Normal 3: (%f, %f, %f)\n", normal3.x, normal3.y, normal3.z);
-    //         exit(0);
-
-    //         double l1 = length_squared(&vtx2, &vtx3);
-    //         double l2 = length_squared(&vtx1, &vtx3);
-    //         double l3 = length_squared(&vtx1, &vtx2);
-
-    //         double weight = l1 + l2 + l3;
-
-    //         double norm = sqrt(pow(normals[index].x, 2) + pow(normals[index].y, 2) + pow(normals[index].z, 2));
-    //         if (norm != 0) {
-    //             normal1.x /= norm;
-    //             normal1.y /= norm;
-    //             normal1.z /= norm;
-    //         }
-
-    //         normals[index].x += normal1.x * weight;
-    //         normals[index].y += normal1.y * weight;
-    //         normals[index].z += normal1.z * weight;
-    //     }
-    // }
-
-    // for (const auto& [index, vtx] : vertices) {
-    //     normals[index].x += vtx->coordinate1;
-    //     normals[index].y += vtx->coordinate2;
-    //     normals[index].z += vtx->coordinate3;
-    // }
-
-    // // Open a PDB file to write the vertices and normals
-    // FILE *pdb_file = fopen("output.pdb", "w");
-    // if (!pdb_file) {
-    //     fprintf(stderr, "Failed to open output.pdb for writing\n");
-    //     return -1;
-    // }
-
-    // for (const auto& [index, normal] : normals) {
-    //     fprintf(pdb_file, "ATOM  %5d  N   NOR A   1    %8.3f%8.3f%8.3f  1.00  0.00           N\n",
-    //             index, normal.x, normal.y, normal.z);
-    // }
-
-    // fclose(pdb_file);
-    // printf("Vertices and normals have been written to output.pdb\n");
 
     // Open a PDB file to write the grid points
     FILE *grid_pdb_file = fopen("grid.pdb", "w");
@@ -330,10 +249,14 @@ int main(int argc, char *argv[])
     fclose(grid_pdb_file);
     printf("Grid points have been written to grid.pdb\n");
 
-    print_to_console_traingles(p.triangles);
+    end_normals = clock();
+    time_spent = (double)(end_normals - start_normals) / CLOCKS_PER_SEC;
+    printf("Took %f seconds for the marhcing tetrahedron computation\n", time_spent);
+
+    // print_to_console_traingles(p.triangles);
 
     free(grid),
-        free_tree(p.root_vertices);
+    free_tree(p.root_vertices);
     free_list(p.triangles);
 
     // Print dimensions

@@ -79,8 +79,14 @@ int main(int argc, char *argv[])
     size_t triangles_count;
     size_t vertex_counter;
 
+    clock_t start_marching, end_marching;
+    start_marching = clock();
     marching_tetrahedra(&dim, &grid, cube_decomposition, threshold, origin,
-                        interpolation_function, &p, &triangles_count, &vertex_counter);
+                        interpolation_function, &p, &triangles_count,
+                        &vertex_counter);
+    end_marching = clock();
+    double time_spent = (double)(end_marching - start_marching) / CLOCKS_PER_SEC;
+    printf("Took %f seconds for the marhcing tetrahedron computation\n", time_spent);
 
     if (p.triangles == NULL)
     {
@@ -97,6 +103,8 @@ int main(int argc, char *argv[])
     printf("Molecule name original: %s\n", molecule_name_original);
     print_on_separate_files(&p, molecule_name_original, molecule_path_original, triangles_count);
 
+    clock_t start_euler, end_euler;
+    start_euler = clock();
     std::unordered_map<int, int> edge_count;
 
     int counter = 0;
@@ -123,9 +131,14 @@ int main(int argc, char *argv[])
         p.triangles = p.triangles->next;
     }
 
-    printf("Edge counts: %d\n", counter);
+    printf("# edges: %d\n", counter);
+    printf("# other method %d\n", edge_count.size());
 
     printf("Euler characteristics: %d\n", triangles_count+vertex_counter-counter);
+    end_euler = clock();
+
+    double time_taken = double(end_euler - start_euler) / CLOCKS_PER_SEC;
+    printf("Time taken to compute Euler characteristics: %f seconds\n", time_taken);
 
     free(grid),
     free_tree(p.root_vertices);
