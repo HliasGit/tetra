@@ -48,6 +48,14 @@ TriangleVertex cross_product_vertices(TriangleVertex *v1, TriangleVertex *v2)
     return result;
 }
 
+TriangleVertex scalar_product(TriangleVertex* v2, double scalar){
+    TriangleVertex result;
+    result.x = scalar * v2->x;
+    result.y = scalar * v2->y;
+    result.z = scalar * v2->z;
+    return result;
+}
+
 double length_squared(TriangleVertex *v1, TriangleVertex *v2)
 {
     return pow(v2->x - v1->x, 2) + pow(v2->y - v1->y, 2) + pow(v2->z - v1->z, 2);
@@ -146,18 +154,18 @@ int main(int argc, char *argv[])
     printf("Molecule name original: %s\n", molecule_name_original);
     print_on_separate_files(&p, molecule_name_original, molecule_path_original, triangles_count);
 
-    ////////////////////// NORMALS //////////////////////
+    //////////////////////////////////////////// NORMALS ////////////////////////////////////////////
 
     clock_t start_normals, end_normals;
     start_normals = clock();
 
-    std::unordered_map<int, std::list<TriangleNode *>> map;
+    std::unordered_map<int, TriangleVertex> vertices;
     std::unordered_map<int, TriangleVertex> normals;
-    std::unordered_map<int, TriangleCoordNode *> vertices;
+
 
     TriangleNode *curr = p.triangles;
 
-    int N = 99999;
+    int N = 99998;
     int count = 0;
     int file_number = 0;
 
@@ -174,20 +182,11 @@ int main(int argc, char *argv[])
         }
     }
 
-    std::cout << folder_name << std::endl;
+    std::cout <<  "FOLDER NAME" << folder_name << std::endl;
 
     FILE *fptr;
 
-    while (curr != NULL)
-    {
-        if(count%N == 0){
-            file_number = count/N;
-            std::string file_name = folder_name + std::to_string(file_number) + ".pdb";
-            fptr = fopen(file_name.c_str(), "w");
-        }
-
-        char str[500];
-
+    while(curr != NULL){
         TriangleVertex vtx1 = {curr->vert1->coordinate1, curr->vert1->coordinate2, curr->vert1->coordinate3};
         TriangleVertex vtx2 = {curr->vert2->coordinate1, curr->vert2->coordinate2, curr->vert2->coordinate3};
         TriangleVertex vtx3 = {curr->vert3->coordinate1, curr->vert3->coordinate2, curr->vert3->coordinate3};
@@ -196,58 +195,108 @@ int main(int argc, char *argv[])
         TriangleVertex v2 = sub_vertices(&vtx3, &vtx1);
         TriangleVertex cross = cross_product_vertices(&v1, &v2);
 
-        double dot_product = cross.x * vtx1.x + cross.y * vtx1.y + cross.z * vtx1.z;
-
         double l1 = length_squared(&vtx2, &vtx3);
         double l2 = length_squared(&vtx1, &vtx3);
         double l3 = length_squared(&vtx1, &vtx2);
 
         double weight = l1 + l2 + l3;
+        double weight1 = 1/(weight*(l2+l3));
+        double weight2 = 1/(weight*(l3+l1));
+        double weight3 = 1/(weight*(l1+l2));
         
-        double normalx = (vtx1.x + vtx2.x + vtx3.x) / 3 + (cross.x);
-        double normaly = (vtx1.y + vtx2.y + vtx3.y) / 3 + (cross.y);
-        double normalz = (vtx1.z + vtx2.z + vtx3.z) / 3 + (cross.z);
 
-        // printf("Normal vector: (%f, %f, %f)\n", normalx, normaly, normalz);
+        vertices[curr->vert1->index].x += scalar_product(&cross, weight1).x;
+        vertices[curr->vert1->index].y += scalar_product(&cross, weight1).y;
+        vertices[curr->vert1->index].z += scalar_product(&cross, weight1).z;
+
+        vertices[curr->vert2->index].x += scalar_product(&cross, weight2).x;
+        vertices[curr->vert2->index].y += scalar_product(&cross, weight2).y;
+        vertices[curr->vert2->index].z += scalar_product(&cross, weight2).z;
+
+        vertices[curr->vert3->index].x += scalar_product(&cross, weight3).x;
+        vertices[curr->vert3->index].y += scalar_product(&cross, weight3).y;
+        vertices[curr->vert3->index].z += scalar_product(&cross, weight3).z;
+
+        normals[curr->vert1->index].x = curr->vert1->coordinate1;
+        normals[curr->vert1->index].y = curr->vert1->coordinate2;
+        normals[curr->vert1->index].z = curr->vert1->coordinate3;
+
+        normals[curr->vert2->index].x = curr->vert2->coordinate1;
+        normals[curr->vert2->index].y = curr->vert2->coordinate2;
+        normals[curr->vert2->index].z = curr->vert2->coordinate3;
+
+        normals[curr->vert3->index].x = curr->vert3->coordinate1;
+        normals[curr->vert3->index].y = curr->vert3->coordinate2;
+        normals[curr->vert3->index].z = curr->vert3->coordinate3;
+
+        curr = curr->next;
+    }
+
+    count = 0;
+    int idx = 0;
+    int local_idx = 0;
+    int local_count = 0;
+    file_number = 0;
+
+    while (idx != vertex_counter)
+    {
+        if(count%N == 0){
+            std::string file_name = folder_name + std::to_string(file_number) + ".pdb";
+            fptr = fopen(file_name.c_str(), "w");
+            local_idx = 0;
+            local_count = 0;
+
+            std::cout << file_name << std::endl;
+        }        
 
         fprintf(fptr, "ATOM  %5d  N   NOR A   1    %8.3f%8.3f%8.3f  1.00  0.00           N\n",
-                count, normalx, normaly, normalz);
+            local_count,  normals[idx].x,
+                    normals[idx].y,
+                    normals[idx].z);
 
+        fprintf(fptr, "ATOM  %5d  N   NOR A   1    %8.3f%8.3f%8.3f  1.00  0.00           N\n",
+            local_count+1,  vertices[idx].x+normals[idx].x,
+                        vertices[idx].y+normals[idx].y,
+                        vertices[idx].z+normals[idx].z);
+
+        fprintf(fptr, "CONECT%5d%5d\n", local_count, local_count + 1);
         
-        count++;
-        curr = curr->next;
+        idx++;
+        local_idx++;
+        local_count += 2;
+        count += 2;
         
-        if((count+1%N == 0)){
+        if(((count+2)%N == 0)){
+            file_number++;
             fclose(fptr);
         }
     }
 
+    // // Open a PDB file to write the grid points
+    // FILE *grid_pdb_file = fopen("grid.pdb", "w");
+    // if (!grid_pdb_file)
+    // {
+    //     fprintf(stderr, "Failed to open grid.pdb for writing\n");
+    //     return -1;
+    // }
 
-    // Open a PDB file to write the grid points
-    FILE *grid_pdb_file = fopen("grid.pdb", "w");
-    if (!grid_pdb_file)
-    {
-        fprintf(stderr, "Failed to open grid.pdb for writing\n");
-        return -1;
-    }
+    // // Iterate through the grid dimensions and write the points
+    // int atom_index = 1;
+    // for (size_t x = 0; x < dim.x_dim; ++x)
+    // {
+    //     for (size_t y = 0; y < dim.y_dim; ++y)
+    //     {
+    //         for (size_t z = 0; z < dim.z_dim; ++z)
+    //         {
+    //             fprintf(grid_pdb_file, "ATOM  %5d  C   GRD A   1    %8.3f%8.3f%8.3f  1.00  0.00           C\n",
+    //                     atom_index, static_cast<double>(x), static_cast<double>(y), static_cast<double>(z));
+    //             atom_index++;
+    //         }
+    //     }
+    // }
 
-    // Iterate through the grid dimensions and write the points
-    int atom_index = 1;
-    for (size_t x = 0; x < dim.x_dim; ++x)
-    {
-        for (size_t y = 0; y < dim.y_dim; ++y)
-        {
-            for (size_t z = 0; z < dim.z_dim; ++z)
-            {
-                fprintf(grid_pdb_file, "ATOM  %5d  C   GRD A   1    %8.3f%8.3f%8.3f  1.00  0.00           C\n",
-                        atom_index, static_cast<double>(x), static_cast<double>(y), static_cast<double>(z));
-                atom_index++;
-            }
-        }
-    }
-
-    fclose(grid_pdb_file);
-    printf("Grid points have been written to grid.pdb\n");
+    // fclose(grid_pdb_file);
+    // printf("Grid points have been written to grid.pdb\n");
 
     end_normals = clock();
     time_spent = (double)(end_normals - start_normals) / CLOCKS_PER_SEC;
