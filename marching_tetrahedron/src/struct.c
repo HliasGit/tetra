@@ -7,11 +7,10 @@
  * @param value Value to be added to the stack
  * @param vert Vertex (Cube vertex) to be added to the stack
  */
-void push_into_stack(StackNode **start, dim_t value, CubeVertex vert, int point, int exp_pos, int *permutations){
+void push_into_stack(StackNode **start, dim_t value, CubeVertex vert){
     StackNode *new = (StackNode*) malloc(sizeof(StackNode));
     new->owned_value = value;
     new->coordinate = vert;
-    new->point = point;
     new->next = NULL;
 
     if(*start == NULL || (*start)->owned_value > value) {
@@ -21,14 +20,7 @@ void push_into_stack(StackNode **start, dim_t value, CubeVertex vert, int point,
         StackNode *current = *start;
         int real_pos = 1;
         while(current->next != NULL && current->next->owned_value <= value) {
-            real_pos++;
             current = current->next;
-        }
-        // printf("Real Pos: %d\n", real_pos);
-        // printf("Exp Pos: %d\n", exp_pos);
-        if(real_pos!=exp_pos){
-            // printf("INSIDE\n");
-            (*permutations)++;
         }
         new->next = current->next;
         current->next = new;

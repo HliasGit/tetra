@@ -35,6 +35,7 @@ void normalize_grid(Dimensions *dim, dim_t **grid, dim_t threshold)
  * @param func_ptr Function pointer to invoke dynamically the interpolation function
  * @param p Pointer to a Polyhedra data structure containing the beginning of the Triangles and Vertices data
  * @param triangle_counter Pointer to a variable containing the number of triangles created
+ * @param vertex_counter Pointer to a variable containing the number of vertices created
  */
 
 void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition, dim_t threshold, double *origin,
@@ -76,7 +77,6 @@ void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition,
                 // check if every vertex in the cube is F(x,y,x) - C < threshold and in case skip it
                 for (int tetra = 0; tetra < 20; tetra += 4)
                 { // for every tetrahedron in a cube
-                    bool cube_parity = parity(i, j, k);
                     coordinates = malloc(4 * sizeof(CubeVertex));
                     // printf("Tetra: %d, cube (%d,%d,%d)\n", tetra / 4 + 1, i, j, k);
                     int permutations = 0;
@@ -100,9 +100,7 @@ void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition,
                                         (*grid)[coordinates[idx - tetra].z +
                                                 coordinates[idx - tetra].y * dim->z_dim +
                                                 coordinates[idx - tetra].x * dim->z_dim * dim->y_dim],
-                                        coordinates[idx - tetra], point,
-                                        idx-tetra,
-                                        &permutations);
+                                        coordinates[idx - tetra]);
                     }
 
                     // Print the stack for debugging purposes
@@ -122,14 +120,9 @@ void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition,
                     }
 
                     bool is_positive_orientation = tetrahedron_determinant(coordinates);
-                    // printf("Is det positive:    %d\n", is_positive_orientation);
-
-                    // tetra_parity != is_positive_orientation ? exit(-1): printf("");
+                   
                     // get the action value
                     int action_value = get_action_value(stack, threshold);
-
-                    // printf("The latter has action value of: %d\n\n", action_value);
-
 
                     // get the pairs
                     int *pairs = get_pairs(action_value);
@@ -150,7 +143,6 @@ void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition,
                         // build the second triangle in case the tetrahedra has two of them
                         if (action_value == 7 ? true : false)
                         {
-
                             Triangle *second_triangle = make_triangle(stack, pairs, true, threshold, func_ptr, is_positive_orientation);
                             (*triangle_counter)++;
 
@@ -435,48 +427,6 @@ int *get_pairs(int action_val)
         break;
     }
 }
-
-bool parity(size_t i, size_t j, size_t k)
-{
-    coord_t one_apex[3];
-    coord_t two_apex[3];
-
-    if (i % 2 == 0)
-    {
-        one_apex[0] = i;
-    }
-    else
-    {
-        one_apex[0] = i + 1;
-    }
-
-    if (j % 2 == 0)
-    {
-        one_apex[1] = j;
-    }
-    else
-    {
-        one_apex[1] = j + 1;
-    }
-
-    if (k % 2 == 0)
-    {
-        one_apex[2] = k;
-    }
-    else
-    {
-        one_apex[2] = k + 1;
-    }
-
-    two_apex[0] = 2 * i + 1 - one_apex[0];
-    two_apex[1] = 2 * j + 1 - one_apex[1];
-    two_apex[2] = 2 * k + 1 - one_apex[2];
-
-    bool res = (two_apex[0] - one_apex[0]) * (two_apex[1] - one_apex[1]) * (two_apex[2] - one_apex[2]) < 0;
-    return res;
-}
-
-double three_det(double mat[3][3]);
 
 bool tetrahedron_determinant(CubeVertex *coords)
 {

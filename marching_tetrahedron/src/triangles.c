@@ -8,48 +8,49 @@
  * @param two_triangles Boolean to handle the case of building two triangles
  * @param threshold Threshold of the isosurface
  * @param func_ptr Function pointer to invoke dynamically the function
+ * @param swap Boolean for the swapping of two vertices
  */
 Triangle *make_triangle(StackNode *stack, int *pairs, bool two_triangles, dim_t threshold, 
     void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*, dim_t*, dim_t*, dim_t), 
-    bool swap)
-{
-Triangle *triangle = (Triangle *)malloc(sizeof(Triangle));
+    bool swap) {
 
-triangle->v1 = (TriangleVertex *)malloc(sizeof(TriangleVertex));
-triangle->v2 = (TriangleVertex *)malloc(sizeof(TriangleVertex));
-triangle->v3 = (TriangleVertex *)malloc(sizeof(TriangleVertex));
+    Triangle *triangle = (Triangle *)malloc(sizeof(Triangle));
 
-int start = two_triangles ? 6 : 0;
+    triangle->v1 = (TriangleVertex *)malloc(sizeof(TriangleVertex));
+    triangle->v2 = (TriangleVertex *)malloc(sizeof(TriangleVertex));
+    triangle->v3 = (TriangleVertex *)malloc(sizeof(TriangleVertex));
 
-for (int i = 0; i < 3; i++) {
-int idx1 = pairs[start + i*2] - 1;
-int idx2 = pairs[start + i*2 + 1] - 1;
+    int start = two_triangles ? 6 : 0;
 
-CubeVertex *point1 = get_coordinate_by_idx(stack, idx1);
-CubeVertex *point2 = get_coordinate_by_idx(stack, idx2);
-dim_t *val1 = get_value_by_idx(stack, idx1);
-dim_t *val2 = get_value_by_idx(stack, idx2);
+    for (int i = 0; i < 3; i++) {
+        int idx1 = pairs[start + i*2] - 1;
+        int idx2 = pairs[start + i*2 + 1] - 1;
 
-switch(i) {
-case 0:
-func_ptr(triangle->v1, point1, point2, val1, val2, threshold);
-break;
-case 1:
-func_ptr(triangle->v2, point1, point2, val1, val2, threshold);
-break;
-case 2:
-func_ptr(triangle->v3, point1, point2, val1, val2, threshold);
-break;
-}
-}
+        CubeVertex *point1 = get_coordinate_by_idx(stack, idx1);
+        CubeVertex *point2 = get_coordinate_by_idx(stack, idx2);
+        dim_t *val1 = get_value_by_idx(stack, idx1);
+        dim_t *val2 = get_value_by_idx(stack, idx2);
 
-if (swap) {
-TriangleVertex *tmp = triangle->v1;
-triangle->v1 = triangle->v2;
-triangle->v2 = tmp;
-}
+        switch(i) {
+            case 0:
+                func_ptr(triangle->v1, point1, point2, val1, val2, threshold);
+                break;
+            case 1:
+                func_ptr(triangle->v2, point1, point2, val1, val2, threshold);
+                break;
+            case 2:
+                func_ptr(triangle->v3, point1, point2, val1, val2, threshold);
+                break;
+            }
+        }
 
-return triangle;
+        if (swap) {
+            TriangleVertex *tmp = triangle->v1;
+            triangle->v1 = triangle->v2;
+            triangle->v2 = tmp;
+        }
+
+    return triangle;
 }
 
 

@@ -84,8 +84,8 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
 
-    // print_for_stats(&p);
     printf("Molecule name original: %s\n", molecule_name_original);
+    
     clock_t start_printing, end_printing;
     start_printing = clock();
     print_on_separate_files(&p, molecule_name_original, molecule_path_original, triangles_count);

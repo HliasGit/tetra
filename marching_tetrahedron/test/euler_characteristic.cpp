@@ -45,10 +45,11 @@ int main(int argc, char *argv[])
     }
 
     printf("Creating surface from file '");
-    printf(molecule_name);
+    printf("%s", molecule_name);
     printf("'\nUsing threshold: %f\n", threshold);
 
     printf("Path to molecule file: %s\n", path);
+
 
     dim_t *grid;
     double origin[3];
@@ -132,9 +133,8 @@ int main(int argc, char *argv[])
     }
 
     printf("# edges: %d\n", counter);
-    printf("# other method %d\n", edge_count.size());
 
-    printf("Euler characteristics: %d\n", triangles_count+vertex_counter-counter);
+    printf("Euler characteristics: %lu\n", triangles_count+vertex_counter-counter);
     end_euler = clock();
 
     double time_taken = double(end_euler - start_euler) / CLOCKS_PER_SEC;

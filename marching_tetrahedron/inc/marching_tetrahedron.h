@@ -20,6 +20,7 @@ bool find_coordinates(  int idx, const int point, const size_t i, const size_t j
 int get_action_value(StackNode *start, dim_t threshold);
 int *get_pairs(int action_val);
 bool parity(size_t i, size_t j, size_t k);
+double three_det(double mat[3][3]);
 bool tetrahedron_determinant(CubeVertex *coordinates);
 
 #ifdef __cplusplus

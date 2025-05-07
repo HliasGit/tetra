@@ -272,37 +272,9 @@ int main(int argc, char *argv[])
         }
     }
 
-    // // Open a PDB file to write the grid points
-    // FILE *grid_pdb_file = fopen("grid.pdb", "w");
-    // if (!grid_pdb_file)
-    // {
-    //     fprintf(stderr, "Failed to open grid.pdb for writing\n");
-    //     return -1;
-    // }
-
-    // // Iterate through the grid dimensions and write the points
-    // int atom_index = 1;
-    // for (size_t x = 0; x < dim.x_dim; ++x)
-    // {
-    //     for (size_t y = 0; y < dim.y_dim; ++y)
-    //     {
-    //         for (size_t z = 0; z < dim.z_dim; ++z)
-    //         {
-    //             fprintf(grid_pdb_file, "ATOM  %5d  C   GRD A   1    %8.3f%8.3f%8.3f  1.00  0.00           C\n",
-    //                     atom_index, static_cast<double>(x), static_cast<double>(y), static_cast<double>(z));
-    //             atom_index++;
-    //         }
-    //     }
-    // }
-
-    // fclose(grid_pdb_file);
-    // printf("Grid points have been written to grid.pdb\n");
-
     end_normals = clock();
     time_spent = (double)(end_normals - start_normals) / CLOCKS_PER_SEC;
     printf("Took %f seconds for the marhcing tetrahedron computation\n", time_spent);
-
-    // print_to_console_traingles(p.triangles);
 
     free(grid),
     free_tree(p.root_vertices);

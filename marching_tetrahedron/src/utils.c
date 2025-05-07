@@ -156,7 +156,7 @@ void print_on_separate_files(Polyhedra *p, char *molecule_name, char *molecule_p
  * The local counter is introduced to have a atom indexing for every file going 0-9999
  * beign usable on PDB (Max idx for connections is 10000)
  * 
- * @param curr Pointer to the triangle list
+ * @param custart_trianglesrr Pointer to the triangle list
  * @param molecule_name Ptr to the name of the molecule
  * @param result_path Ptr to the result path of the molecule
  * @param num_triangles Number of total triangles generated
@@ -169,26 +169,23 @@ void print_atoms_connections_separated(TriangleNode *start_triangles, char *mole
     char file_name[200];
     int N = 33333;
     int count = 0; 
-    int div = 0;
     int file_number = 0;
-    int missed = 0;
 
-    printf(result_path);
+    printf("The result path is: %s\n", result_path);
     printf("\n");
 
-    printf("Number of files: %d\n", num_traingles/N + 1);
+    printf("Number of produced files:   %d\n", num_traingles/N + 1);
 
     int local_counter_1 = 0, local_counter_2 = 0, local_counter_3 = 0;
+    int temp_counter_1 = 0, temp_counter_2 = 0, temp_counter_3 = 0;
 
     TriangleNode *curr = start_triangles;
 
     while(curr != NULL){
-
         if(count%N == 0){
             strcpy(file_name, result_path);
             strcat(file_name, molecule_name);
             file_number = count/N;
-            div = count;
             sprintf(file_name + strlen(file_name), "_%d", file_number);
             strcat(file_name, ".pdb");
             fptr = fopen(file_name, "w");
@@ -198,34 +195,24 @@ void print_atoms_connections_separated(TriangleNode *start_triangles, char *mole
         }
         
         char str[500];
-        
-        
+
         snprintf(str, sizeof(str), "ATOM  %5d C    PSE A   1    %8.2f%8.2f%8.2f 1.00  1.00           C\n", 
         local_counter_1, curr->vert1->coordinate1, curr->vert1->coordinate2, curr->vert1->coordinate3);
         fprintf(fptr, "%s", str);
-
-        int temp_counter_1 = local_counter_1;
+        temp_counter_1 = local_counter_1;
         local_counter_2 = ++local_counter_1;
         
         snprintf(str, sizeof(str), "ATOM  %5d C    PSE A   1    %8.2f%8.2f%8.2f 1.00  1.00           C\n", 
         local_counter_2, curr->vert2->coordinate1, curr->vert2->coordinate2, curr->vert2->coordinate3);
         fprintf(fptr, "%s", str);
-        int temp_counter_2 = local_counter_2;
+        temp_counter_2 = local_counter_2;
         local_counter_3 = ++local_counter_2;
         
         snprintf(str, sizeof(str), "ATOM  %5d C    PSE A   1    %8.2f%8.2f%8.2f 1.00  1.00           C\n", 
         local_counter_3, curr->vert3->coordinate1, curr->vert3->coordinate2, curr->vert3->coordinate3);
         fprintf(fptr, "%s", str);
-        int temp_counter_3 = local_counter_3;
+        temp_counter_3 = local_counter_3;
         local_counter_1 = ++local_counter_3;
-
-        // if (curr->vert1->index%N >= 10000 || curr->vert2->index%N >= 10000 || curr->vert3->index%N >= 10000) {
-        //     count++;
-        //     curr = curr->next;
-        //     missed++;
-        //     continue;
-        // }
-
 
         fprintf(fptr, "CONECT%5d%5d\n", temp_counter_1, temp_counter_2);
         fprintf(fptr, "CONECT%5d%5d\n", temp_counter_2, temp_counter_3);
@@ -240,6 +227,11 @@ void print_atoms_connections_separated(TriangleNode *start_triangles, char *mole
     }
 }
 
+/**
+ * @brief print to the console the triangles in the data structure
+ * 
+ * @param start Pointer to the beginning of the list
+ */
 void print_to_console_traingles(TriangleNode* start){
     int count = 0;
     printf("Triangles:\n");
