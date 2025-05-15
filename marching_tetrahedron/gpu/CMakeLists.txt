@@ -1,0 +1,26 @@
+file(GLOB_RECURSE TETRA_SOURCES src/*.c)
+file(GLOB_RECURSE TETRA_SOURCES_CUDA src/*.cu)
+list(APPEND TETRA_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../common/utils.c)
+
+add_library(TETRA_GPU SHARED ${TETRA_SOURCES} ${TETRA_SOURCES_CUDA})
+
+set_target_properties(TETRA_GPU PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    C_STANDARD 11
+    CUDA_ARCHITECTURES "60;70;75"
+    POSITION_INDEPENDENT_CODE ON
+)
+
+target_include_directories(TETRA_GPU PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common
+)
+
+target_link_libraries(TETRA_GPU PRIVATE
+    ${CUDA_LIBRARIES}
+    COMMON
+)
+
+if(VERBOSE)
+    target_compile_definitions(TETRA_GPU PRIVATE VERBOSE)
+endif()

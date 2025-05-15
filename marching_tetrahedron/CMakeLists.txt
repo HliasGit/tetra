@@ -1,13 +1,16 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.18)
 
 cmake_policy(SET CMP0048 NEW)
-project(PYTHAGORAS VERSION 0.1)
+cmake_policy(SET CMP0104 NEW)
 
-set(LANGUAGES C CXX)
+project(PYTHAGORAS VERSION 0.1 LANGUAGES C CXX CUDA)
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CUDA_STANDARD 11)
+set(CMAKE_CUDA_STANDARD_REQUIRED True)
 
 option(VERBOSE "Enable verbose mode")
 
@@ -38,18 +41,10 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math")
 endif()
 
+add_subdirectory(common)
 
+add_subdirectory(cpu)
+add_subdirectory(test_cpu)
 
-# ====== Now build the library ======
-file(GLOB_RECURSE TETRA_SOURCES src/*.c)
-
-add_library(TETRA ${TETRA_SOURCES})
-target_include_directories(TETRA PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/inc
-)
-
-if(VERBOSE)
-    target_compile_definitions(TETRA PRIVATE VERBOSE)
-endif()
-
-add_subdirectory(test)
+add_subdirectory(gpu)
+add_subdirectory(test_gpu)

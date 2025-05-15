@@ -3,7 +3,8 @@ macro(add_test_executable_c name)
     add_executable(${name} ${name}.c)
     target_link_libraries(${name} PRIVATE TETRA m)
     target_include_directories(${name} PRIVATE 
-        ${CMAKE_SOURCE_DIR}/inc
+        ${CMAKE_SOURCE_DIR}/cpu/inc
+        ${CMAKE_SOURCE_DIR}/common
     )
 
     if(VERBOSE)
@@ -17,7 +18,7 @@ macro(add_test_executable_cpp name)
     add_executable(${name} ${name}.cpp)
     target_link_libraries(${name} PRIVATE TETRA m)
     target_include_directories(${name} PRIVATE 
-        ${CMAKE_SOURCE_DIR}/inc
+        ${CMAKE_SOURCE_DIR}/cpu/inc
     )
 
     if(VERBOSE)

@@ -15,6 +15,8 @@
 #include <math.h>
 #include <stdbool.h>
 #include <time.h>
+#include <sys/stat.h>
+
 
 typedef double dim_t;    // type of the scalar field values
 typedef double coord_t;  // type for the coordinates (float or double)

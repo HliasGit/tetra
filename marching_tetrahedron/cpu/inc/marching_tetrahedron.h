@@ -15,6 +15,12 @@ void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decompositi
                             double *origin, void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*,
                             dim_t*, dim_t*, dim_t), Polyhedra *p, size_t *triangles_count,
                             size_t *vertex_counter);
+
+void marching_tetrahedra_list(   Dimensions *dim, dim_t **grid, int *cube_decomposition, dim_t threshold,
+                            double *origin, void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*,
+                            dim_t*, dim_t*, dim_t), Polyhedra *p, size_t *triangles_count,
+                            size_t *vertex_counter, int size, int *results);
+
 bool find_coordinates(  int idx, const int point, const size_t i, const size_t j, const size_t k,
                         CubeVertex **coordinates);
 int get_action_value(StackNode *start, dim_t threshold);

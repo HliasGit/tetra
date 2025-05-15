@@ -1,5 +1,5 @@
 #include "utils.h"
-#include "struct.h"
+
 
 /**
  * @brief Reads a file and initializes the tensor data (linearized) structure along with its dimensions and origin.

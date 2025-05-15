@@ -227,44 +227,44 @@ bool find_coordinates(int idx, const int point, const size_t i, const size_t j, 
     two_apex[1] = 2 * j + 1 - one_apex[1];
     two_apex[2] = 2 * k + 1 - one_apex[2];
 
-    switch (point - 1)
+    switch (point)
     {
-    case 0:
-        (*coordinates)[idx].x = one_apex[0];
-        (*coordinates)[idx].y = one_apex[1];
-        (*coordinates)[idx].z = one_apex[2];
-        break;
     case 1:
-        (*coordinates)[idx].x = two_apex[0];
+        (*coordinates)[idx].x = one_apex[0];
         (*coordinates)[idx].y = one_apex[1];
         (*coordinates)[idx].z = one_apex[2];
         break;
     case 2:
-        (*coordinates)[idx].x = one_apex[0];
-        (*coordinates)[idx].y = two_apex[1];
+        (*coordinates)[idx].x = two_apex[0];
+        (*coordinates)[idx].y = one_apex[1];
         (*coordinates)[idx].z = one_apex[2];
         break;
     case 3:
-        (*coordinates)[idx].x = two_apex[0];
+        (*coordinates)[idx].x = one_apex[0];
         (*coordinates)[idx].y = two_apex[1];
         (*coordinates)[idx].z = one_apex[2];
         break;
     case 4:
-        (*coordinates)[idx].x = one_apex[0];
-        (*coordinates)[idx].y = one_apex[1];
-        (*coordinates)[idx].z = two_apex[2];
+        (*coordinates)[idx].x = two_apex[0];
+        (*coordinates)[idx].y = two_apex[1];
+        (*coordinates)[idx].z = one_apex[2];
         break;
     case 5:
-        (*coordinates)[idx].x = two_apex[0];
+        (*coordinates)[idx].x = one_apex[0];
         (*coordinates)[idx].y = one_apex[1];
         (*coordinates)[idx].z = two_apex[2];
         break;
     case 6:
+        (*coordinates)[idx].x = two_apex[0];
+        (*coordinates)[idx].y = one_apex[1];
+        (*coordinates)[idx].z = two_apex[2];
+        break;
+    case 7:
         (*coordinates)[idx].x = one_apex[0];
         (*coordinates)[idx].y = two_apex[1];
         (*coordinates)[idx].z = two_apex[2];
         break;
-    case 7:
+    case 8:
         (*coordinates)[idx].x = two_apex[0];
         (*coordinates)[idx].y = two_apex[1];
         (*coordinates)[idx].z = two_apex[2];
@@ -274,7 +274,7 @@ bool find_coordinates(int idx, const int point, const size_t i, const size_t j, 
         exit(-1);
     }
 
-    bool res = (two_apex[0] - one_apex[0]) * (two_apex[1] - one_apex[1]) * (two_apex[2] - one_apex[2]) < 0;
+    bool res = true;
     return res;
 }
 
@@ -461,4 +461,139 @@ double three_det(double mat[3][3])
     return mat[0][0] * (mat[1][1] * mat[2][2] - mat[1][2] * mat[2][1]) -
            mat[0][1] * (mat[1][0] * mat[2][2] - mat[1][2] * mat[2][0]) +
            mat[0][2] * (mat[1][0] * mat[2][1] - mat[1][1] * mat[2][0]);
+}
+
+void marching_tetrahedra_list(Dimensions *dim, dim_t **grid, int *cube_decomposition, dim_t threshold, double *origin,
+                            void (*func_ptr)(TriangleVertex *, CubeVertex *, CubeVertex *, dim_t *, dim_t *, dim_t),
+                            Polyhedra *p, size_t *triangle_counter, size_t *vertex_counter, int size,
+                            int *results)
+{
+
+    CubeVertex *coordinates;
+    StackNode *stack = NULL;
+    (*vertex_counter) = 0;
+    (*triangle_counter) = 0;
+
+    size_t count_swap = 0;
+    size_t re_count_swap = 0;
+    bool res;
+
+    size_t progress = 0;
+    size_t tot_scan = dim->x_dim * dim->y_dim * dim->z_dim;
+
+    // for every cube in the space
+    for(int cube = 0; cube<size; cube++)
+    { // Cube global coordinate
+
+        int idx_cube = results[cube];
+        int DZ = dim->z_dim;
+        int DY = dim->y_dim;
+        int k = idx_cube % DZ;
+        int j = (idx_cube / DZ) % DY;
+        int i = idx_cube / (DZ * DY);
+
+        progress = (i * dim->y_dim * dim->z_dim + j * dim->z_dim + k) * 100 / tot_scan;
+        static size_t last_progress = 0;
+        if (progress % 10 == 0 && progress != 0 && progress != last_progress)
+        {
+            printf("Progress: %zu%%\r", progress); fflush(stdout);
+            last_progress = progress;
+        }
+
+        int idx = 0;
+        int point = 0;
+
+        // check if every vertex in the cube is F(x,y,x) - C < threshold and in case skip it
+        for (int tetra = 0; tetra < 20; tetra += 4)
+        { // for every tetrahedron in a cube
+            coordinates = malloc(4 * sizeof(CubeVertex));
+            // printf("Tetra: %d, cube (%d,%d,%d)\n", tetra / 4 + 1, i, j, k);
+            int permutations = 0;
+            
+            for (idx = tetra; idx < tetra + 4; idx++)
+            { // for every point in a tetrahedra
+
+                point = cube_decomposition[idx];
+                // printf("point coord (%d,%d,%d): %d\n", i, j, k, point);
+
+                // find the global tetrahedra coordinates.
+                find_coordinates(idx - tetra, point, i, j, k, &coordinates);
+                // printf("find_coordinates result: %d\n", res);
+                verbose_print("    Point: %d\n", point);
+                verbose_print("        coord x: %d\n", coordinates[idx - tetra].x);
+                verbose_print("        coord y: %d\n", coordinates[idx - tetra].y);
+                verbose_print("        coord z: %d\n", coordinates[idx - tetra].z);
+
+                // get the # neg, # zero, # pos for each tetrahedron in the stack
+                push_into_stack(&stack,
+                                (*grid)[coordinates[idx - tetra].z +
+                                        coordinates[idx - tetra].y * dim->z_dim +
+                                        coordinates[idx - tetra].x * dim->z_dim * dim->y_dim],
+                                coordinates[idx - tetra]);
+            }
+
+            // Print the stack for debugging purposes
+            StackNode *current = stack;
+            int stack_index = 0;
+            // printf("Stack contents:\n");
+            while (current != NULL) {
+                // printf("    Value: %f, Coordinates: (%d, %d, %d), point: %d\n",
+                //        current->owned_value,
+                //        current->coordinate.x,
+                //        current->coordinate.y,
+                //        current->coordinate.z,
+                //         current->point);
+                coordinates[stack_index] = current->coordinate;
+                stack_index++;
+                current = current->next;
+            }
+
+            bool is_positive_orientation = tetrahedron_determinant(coordinates);
+            
+            // get the action value
+            int action_value = get_action_value(stack, threshold);
+
+            // get the pairs
+            int *pairs = get_pairs(action_value);
+
+            if (action_value != 0)
+            {
+                // build the triangle
+                Triangle *triangle = make_triangle(stack, pairs, false, threshold, func_ptr, is_positive_orientation);
+                (*triangle_counter)++;
+                
+                push_triangle(&p, triangle, vertex_counter);
+
+                free(triangle->v1);
+                free(triangle->v2);
+                free(triangle->v3);
+                free(triangle);
+
+                // build the second triangle in case the tetrahedra has two of them
+                if (action_value == 7 ? true : false)
+                {
+                    Triangle *second_triangle = make_triangle(stack, pairs, true, threshold, func_ptr, is_positive_orientation);
+                    (*triangle_counter)++;
+
+                    push_triangle(&p, second_triangle, vertex_counter);
+
+                    free(second_triangle->v1);
+                    free(second_triangle->v2);
+                    free(second_triangle->v3);
+                    free(second_triangle);
+                }
+            }
+
+            free(pairs);
+            free_stack(&stack);
+            free(coordinates);
+        }
+    }
+    // Reverse the triangle list. Since I make it pushing from the head I have to reverse so the head has index 0
+    reverse_list(&p->triangles);
+
+    printf("# of triangles: %8zu\n", (*triangle_counter));
+    printf("# of vertices:  %8zu\n", (*vertex_counter));
+    printf("# to be swapped: %8zu\n", count_swap);
+    printf("# to be checked after swap: %8zu\n", re_count_swap);
 }

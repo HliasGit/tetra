@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
 
     Dimensions dim;
 
-    char molecule_path[100] = "/home/elia/tesi/tetra/marching_tetrahedron/data/";
+    char molecule_path[100] = "/home/fs72740/evaglietti/tetra/marching_tetrahedron/data/";
     char molecule_name[100];
     char molecule_name_original[100];
     char molecule_path_original[100];
@@ -102,23 +102,23 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    // Iterate through the grid dimensions and write the points
-    int atom_index = 1;
-    for (size_t x = 0; x < dim.x_dim; ++x)
-    {
-        for (size_t y = 0; y < dim.y_dim; ++y)
-        {
-            for (size_t z = 0; z < dim.z_dim; ++z)
-            {
-                fprintf(grid_pdb_file, "ATOM  %5d  C   GRD A   1    %8.3f%8.3f%8.3f  1.00  0.00           C\n",
-                        atom_index, (double)x, (double)y, (double)z);
-                atom_index++;
-            }
-        }
-    }
+    // // Iterate through the grid dimensions and write the points
+    // int atom_index = 1;
+    // for (size_t x = 0; x < dim.x_dim; ++x)
+    // {
+    //     for (size_t y = 0; y < dim.y_dim; ++y)
+    //     {
+    //         for (size_t z = 0; z < dim.z_dim; ++z)
+    //         {
+    //             fprintf(grid_pdb_file, "ATOM  %5d  C   GRD A   1    %8.3f%8.3f%8.3f  1.00  0.00           C\n",
+    //                     atom_index, (double)x, (double)y, (double)z);
+    //             atom_index++;
+    //         }
+    //     }
+    // }
 
-    fclose(grid_pdb_file);
-    printf("Grid points have been written to grid.pdb\n");
+    // fclose(grid_pdb_file);
+    // printf("Grid points have been written to grid.pdb\n");
 
     free(grid),
     free_tree(p.root_vertices);
