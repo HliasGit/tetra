@@ -119,8 +119,6 @@ __global__ void compute_march_tetra(    double *d_grid, cube_gpu *d_relevant_cub
 
     for (int tetra = 0; tetra < 5; tetra++){
 
-        
-        
         cube_vertices_points *first     = &d_cube_points_coordinates[tid*8+cube_deco[tetra*4+0]];
         cube_vertices_points *second    = &d_cube_points_coordinates[tid*8+cube_deco[tetra*4+1]];
         cube_vertices_points *third     = &d_cube_points_coordinates[tid*8+cube_deco[tetra*4+2]];
@@ -141,9 +139,6 @@ __global__ void compute_march_tetra(    double *d_grid, cube_gpu *d_relevant_cub
 }
 
 __device__ int get_action_value( int less, int eq, int gre){
-    // if(less == 3){
-    //     printf("AAAAAAAAAAAAA\n");
-    // }
 
     if (less == 0 || (less == 2 && eq == 2) || (less == 3 && eq == 1) || less == 4)
     {
@@ -178,34 +173,15 @@ __device__ void count_elements( int *less, int *eq, int *gre, cube_vertices_poin
                                 cube_vertices_points *second, cube_vertices_points *third, cube_vertices_points *fourth,
                                 dim_t threshold){
 
-    int less_ = 0, eq_ = 0, gre_ = 0;
-
-    // if (first != nullptr && first->value < threshold)
-    //     printf("first value: %f\n", first->value);
-    // if (second != nullptr && second->value < threshold)
-    //     printf("second value: %f\n", second->value);
-    // if (third != nullptr && third->value < threshold)
-    //     printf("third value: %f\n", third->value);
-    // if (fourth != nullptr && fourth->value < threshold)
-    //     printf("fourth value: %f\n", fourth->value);
-
     cube_vertices_points* arr[4] = {first, second, third, fourth};
     for (int i = 0; i < 4; ++i) {
         if (arr[i]->value < threshold) {
             (*less)++;
-            less_++;
         } else if (arr[i]->value < threshold) {
             (*eq)++;
-            eq_++;
         } else {
             (*gre)++;
-            gre_++;
         }
-    }
-
-    // Print only if less, eq, and gre are all not 0 or 4
-    if ((*less != 0 && *less != 4) && (*eq != 0 && *eq != 4) && (*gre != 0 && *gre != 4)) {
-        printf("less: %d, eq: %d, gre: %d\n", *less, *eq, *gre);
     }
 }
 
@@ -354,8 +330,9 @@ void parallel_march_tetra   (Dimensions *dim, dim_t *d_grid, int *cube_decomposi
     printf("\nLaunching kernel to compute MT algo\n");
     printf("# blocks                            %d \nand # threads                       %d \n", n_blocks, n_threads);
 
-
-    cudaMallocManaged(&cube_decomposition, sizeof(int)*20);
+    int *d_cube_decomposition;
+    cudaMalloc(&d_cube_decomposition, sizeof(int)*20);
+    cudaMemcpy(d_cube_decomposition, cube_decomposition, sizeof(int) * 20, cudaMemcpyHostToDevice);
 
     cube_vertices_points *d_stack_pool;
     cudaMallocManaged(&d_stack_pool, sizeof(cube_vertices_points)*20*relevant_size);
@@ -372,7 +349,7 @@ void parallel_march_tetra   (Dimensions *dim, dim_t *d_grid, int *cube_decomposi
     cudaMallocManaged(&pool_index, sizeof(int));
 
     compute_march_tetra<<<n_blocks, n_threads>>>(   d_grid, *d_relevant_cubes,
-                                                    relevant_size, cube_decomposition,
+                                                    relevant_size, d_cube_decomposition,
                                                     *d_cube_points_coordinates, d_stack_pool, pool_index,
                                                     threshold);
     cudaDeviceSynchronize();
