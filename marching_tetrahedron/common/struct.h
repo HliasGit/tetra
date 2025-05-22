@@ -3,6 +3,8 @@
 
 #include "global.h"
 #include "triangles.h"
+#include <cuda.h>
+#include <cuda_runtime.h>
 
 #ifdef __cplusplus
 extern "C" {

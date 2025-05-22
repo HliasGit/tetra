@@ -1,7 +1,7 @@
 file(GLOB_RECURSE TETRA_SOURCES src/*.c)
 list(APPEND TETRA_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../common/utils.c)
 
-message(STATUS "TETRA_SOURCES: ${TETRA_SOURCES}")
+# message(STATUS "TETRA_SOURCES: ${TETRA_SOURCES}")
 
 add_library(TETRA ${TETRA_SOURCES})
 target_include_directories(TETRA PUBLIC 

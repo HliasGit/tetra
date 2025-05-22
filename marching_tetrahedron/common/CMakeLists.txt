@@ -1,4 +1,7 @@
 file(GLOB COMMON_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/*.c")
 
 add_library(COMMON ${COMMON_SOURCES})
-target_include_directories(COMMON PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../cpu/inc)
+target_include_directories(COMMON PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(COMMON PRIVATE
+    ${CUDA_LIBRARIES}
+)

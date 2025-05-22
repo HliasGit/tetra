@@ -20,8 +20,9 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # ====== Set the compiler flags ======
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    message(STATUS "Building in debug mode")
+if (CMAKE_BUILD_TYPE STREQUAL "Sanitizer")
+    message(STATUS "Building in sanitizer mode")
+
     # AddressSanitizer settings
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer -static-libasan -O0 -g -Wall -Wextra")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
@@ -29,12 +30,20 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 
     # Set environment variable to catch memory leaks
     set(ENV{ASAN_OPTIONS} "detect_leaks=1")
-
     message(STATUS "AddressSanitizer enabled for memory leak detection")
+
+elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    message(STATUS "Building in debug mode")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O0 -g")
+
 elseif(CMAKE_BUILD_TYPE STREQUAL "Profile")
     message(STATUS "Building in profile mode")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -g")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -g")
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 -g")
+
 else()
     message(STATUS "Building in release mode")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -ffast-math")
