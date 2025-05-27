@@ -19,6 +19,12 @@ typedef struct cube_gpu{
     int two_apex[3];
 } cube_gpu;
 
+typedef struct Triangle_GPU{
+    TriangleVertex v1;
+    TriangleVertex v2;
+    TriangleVertex v3;
+} Triangle_GPU;
+
 typedef struct cube_vertices_points{
     CubeVertex coord;
     dim_t value;
@@ -31,7 +37,8 @@ void remove_unnecessary_cubes(  double *d_grid, size_t total_size, double thresh
 void parallel_march_tetra   (Dimensions *dim, dim_t *grid, int *cube_decomposition, dim_t threshold,
                             void (*func_ptr)(TriangleVertex *, CubeVertex *, CubeVertex *, dim_t *, dim_t *, dim_t),
                             Polyhedra *p, size_t *triangle_counter, size_t *vertex_counter, int relevant_size,
-                            cube_gpu **d_relevant_cubes, cube_vertices_points **d_cube_points_coordinates);
+                            cube_gpu **d_relevant_cubes, cube_vertices_points **d_cube_points_coordinates,
+                            int* act_val_vec, int* pairs, Triangle_GPU **triangles);
 
 void allocate_d_grid(dim_t **d_grid, dim_t *grid, size_t size);
 
