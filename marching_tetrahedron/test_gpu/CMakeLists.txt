@@ -17,3 +17,4 @@ endmacro()
 
 # Test executables
 add_test_executable_c(test)
+add_test_executable_c(test_wo_preprocessing)

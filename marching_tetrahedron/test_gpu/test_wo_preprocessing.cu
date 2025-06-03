@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
     cube_gpu *d_relevant_cubes;
     cube_vertices_points *d_cube_points_coordinates;
 
-    remove_unnecessary_cubes(   d_grid, size, threshold, &dim,
+    skip_preprocessing(   d_grid, size, threshold, &dim,
                                 &number_relevant_cubes, &d_relevant_cubes,
                                 &d_cube_points_coordinates);
 
@@ -66,12 +66,9 @@ int main(int argc, char *argv[]) {
     int pairs[48] = {1,2,1,3,1,4,2,2,1,3,1,4,2,2,3,3,1,4,2,2,3,3,4,4,1,4,2,4,3,3,1,4,2,4,3,4,1,4,2,4,1,3,2,4,2,3,1,3};
     
     parallel_march_tetra(   &dim, d_grid, cube_decomposition, threshold, &triangles_count,
-                            &vertex_counter, number_relevant_cubes, 
+                            &vertex_counter, size, 
                             &d_relevant_cubes, &d_cube_points_coordinates, act_val_vec,
                             pairs, &triangles);
-
-
-
  
     print_triangles(triangles, &number_relevant_cubes, molecule_name_original, molecule_path_original);
 

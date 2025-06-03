@@ -8,6 +8,10 @@ __global__ void remove_unnecessary_cubes_kernel(double *grid, int *counter,
                                                 size_t size, double threshold,
                                                 Dimensions *dim, cube_gpu *d_relevant_cubes);
 
+                                                
+__global__ void skip_preprocessing_k(double* grid, size_t size, double threshold,
+                                                Dimensions *dim, cube_gpu* d_relevant_cubes);
+
 __global__ void compute_apex(   double *grid, cube_gpu *d_relevant_cubes, int *number_relevant_cubes,
                                 cube_vertices_points *d_cube_points_coordinates,
                                 Dimensions *dim);

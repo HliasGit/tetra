@@ -40,6 +40,10 @@ void remove_unnecessary_cubes(  double *d_grid, size_t cubes_in_domain, double t
                                 Dimensions *dim, int *number_relevant_cubes,
                                 cube_gpu **d_relevant_cubes, cube_vertices_points **d_cube_points_coordinates);
 
+void skip_preprocessing(   double *d_grid, size_t cubes_in_domain, double threshold,
+                                Dimensions *dim, int *number_relevant_cubes,
+                                cube_gpu **d_relevant_cubes, cube_vertices_points **d_cube_points_coordinates);
+
 void parallel_march_tetra   (Dimensions *dim, dim_t *grid, int *cube_decomposition, dim_t threshold,
                             size_t *triangle_counter, size_t *vertex_counter, int number_relevant_cubes,
                             cube_gpu **d_relevant_cubes, cube_vertices_points **cube_points_coordinates,
