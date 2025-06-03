@@ -9,7 +9,7 @@
  * @param tensor Pointer to a pointer of type dim_t where the tensor data will be allocated and stored.
  * @param origin Pointer to a double array where the origin coordinates will be stored.
  */
-void read_file(const char* file_name, Dimensions *dim, dim_t **tensor, double *origin){
+void read_file(const char* file_name, Dimensions *dim, dim_t **tensor, dim_t *origin){
 
     FILE *fptr;
     fptr = fopen(file_name, "rb"); 
@@ -19,16 +19,16 @@ void read_file(const char* file_name, Dimensions *dim, dim_t **tensor, double *o
         exit(-1);
     }
 
-    double dx;
-    double dy;
-    double dz;
+    dim_t dx;
+    dim_t dy;
+    dim_t dz;
     
-    fread(&(dx), sizeof(double), 1, fptr);
-    fread(&(dy), sizeof(double), 1, fptr);
-    fread(&(dz), sizeof(double), 1, fptr);
-    fread(&(origin[0]), sizeof(double), 1, fptr);
-    fread(&(origin[1]), sizeof(double), 1, fptr);
-    fread(&(origin[2]), sizeof(double), 1, fptr);
+    fread(&(dx), sizeof(dim_t), 1, fptr);
+    fread(&(dy), sizeof(dim_t), 1, fptr);
+    fread(&(dz), sizeof(dim_t), 1, fptr);
+    fread(&(origin[0]), sizeof(dim_t), 1, fptr);
+    fread(&(origin[1]), sizeof(dim_t), 1, fptr);
+    fread(&(origin[2]), sizeof(dim_t), 1, fptr);
     fread(&(dim->x_dim), sizeof(size_t), 1, fptr);
     fread(&(dim->y_dim), sizeof(size_t), 1, fptr);
     fread(&(dim->z_dim), sizeof(size_t), 1, fptr);

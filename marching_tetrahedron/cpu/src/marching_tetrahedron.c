@@ -38,7 +38,7 @@ void normalize_grid(Dimensions *dim, dim_t **grid, dim_t threshold)
  * @param vertex_counter Pointer to a variable containing the number of vertices created
  */
 
-void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition, dim_t threshold, double *origin,
+void marching_tetrahedra(Dimensions *dim, dim_t **grid, int *cube_decomposition, dim_t threshold, dim_t *origin,
                          void (*func_ptr)(TriangleVertex *, CubeVertex *, CubeVertex *, dim_t *, dim_t *, dim_t),
                          Polyhedra *p, size_t *triangle_counter, size_t *vertex_counter)
 {
@@ -463,7 +463,7 @@ double three_det(double mat[3][3])
            mat[0][2] * (mat[1][0] * mat[2][1] - mat[1][1] * mat[2][0]);
 }
 
-void marching_tetrahedra_list(Dimensions *dim, dim_t **grid, int *cube_decomposition, dim_t threshold, double *origin,
+void marching_tetrahedra_list(Dimensions *dim, dim_t **grid, int *cube_decomposition, dim_t threshold, dim_t *origin,
                             void (*func_ptr)(TriangleVertex *, CubeVertex *, CubeVertex *, dim_t *, dim_t *, dim_t),
                             Polyhedra *p, size_t *triangle_counter, size_t *vertex_counter, int size,
                             int *results)

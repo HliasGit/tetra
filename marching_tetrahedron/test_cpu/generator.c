@@ -13,22 +13,22 @@ int main(){
         printf("null ptr");
     }
 
-    double dx = 50;
-    double dy = 50;
-    double dz = 50;
-    double origin_x = 50;
-    double origin_y = 50;
-    double origin_z = 50;
+    dim_t dx = 50;
+    dim_t dy = 50;
+    dim_t dz = 50;
+    dim_t origin_x = 50;
+    dim_t origin_y = 50;
+    dim_t origin_z = 50;
     size_t x_d = 5;
     size_t y_d = 2;
     size_t z_d = 2;
 
-    fwrite(&dx, sizeof(double), 1, fptr);
-    fwrite(&dy, sizeof(double), 1, fptr);
-    fwrite(&dz, sizeof(double), 1, fptr);
-    fwrite(&origin_x, sizeof(double), 1, fptr);
-    fwrite(&origin_y, sizeof(double), 1, fptr);
-    fwrite(&origin_z, sizeof(double), 1, fptr);
+    fwrite(&dx, sizeof(dim_t), 1, fptr);
+    fwrite(&dy, sizeof(dim_t), 1, fptr);
+    fwrite(&dz, sizeof(dim_t), 1, fptr);
+    fwrite(&origin_x, sizeof(dim_t), 1, fptr);
+    fwrite(&origin_y, sizeof(dim_t), 1, fptr);
+    fwrite(&origin_z, sizeof(dim_t), 1, fptr);
     fwrite(&x_d, sizeof(size_t), 1, fptr);
     fwrite(&y_d, sizeof(size_t), 1, fptr);
     fwrite(&z_d, sizeof(size_t), 1, fptr);

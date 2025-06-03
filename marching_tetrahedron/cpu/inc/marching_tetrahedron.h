@@ -12,12 +12,12 @@ extern "C" {
 
 void normalize_grid(Dimensions *dim, dim_t **grid, dim_t threshold);
 void marching_tetrahedra(   Dimensions *dim, dim_t **grid, int *cube_decomposition, dim_t threshold,
-                            double *origin, void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*,
+                            dim_t *origin, void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*,
                             dim_t*, dim_t*, dim_t), Polyhedra *p, size_t *triangles_count,
                             size_t *vertex_counter);
 
 void marching_tetrahedra_list(   Dimensions *dim, dim_t **grid, int *cube_decomposition, dim_t threshold,
-                            double *origin, void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*,
+                            dim_t *origin, void (*func_ptr)(TriangleVertex*, CubeVertex*, CubeVertex*,
                             dim_t*, dim_t*, dim_t), Polyhedra *p, size_t *triangles_count,
                             size_t *vertex_counter, int size, int *results);
 

@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
     char *path = strcat(molecule_path, strcat(molecule_name, ".bin"));
     
     char *endptr;
-    double threshold = strtod(argv[1], &endptr);
+    dim_t threshold = strtod(argv[1], &endptr);
     if (*endptr != '\0') {
         fprintf(stderr, "Invalid threshold value: %s\n", argv[1]);
         return -1;
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
     printf("Path to molecule file: %s\n", path);
 
     dim_t *grid;
-    double origin[3];
+    dim_t origin[3];
 
     int cube_decomposition[20] = {4,6,7,8,1,5,6,7,1,3,4,7,1,2,4,6,1,4,6,7};
 

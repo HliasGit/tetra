@@ -18,8 +18,8 @@
 #include <sys/stat.h>
 
 
-typedef double dim_t;    // type of the scalar field values
-typedef double coord_t;  // type for the coordinates (float or double)
+typedef float dim_t;    // type of the scalar field values
+typedef float coord_t;  // type for the coordinates (float or double)
 
 typedef struct dimensions{
     size_t x_dim;

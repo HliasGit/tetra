@@ -10,13 +10,13 @@ int main(int argc, char *argv[]) {
 
     Dimensions dim;
 
-    char molecule_path[100] = "/home/fs72740/evaglietti/tetra/marching_tetrahedron/data/";
-    char molecule_name[100] = "9mxc_atom";
-    char molecule_path_original[100] = "/home/fs72740/evaglietti/tetra/marching_tetrahedron/data/";
-    char molecule_name_original[100] = "9mxc_atom";
+    char molecule_path[100] = "/home/fs72740/evaglietti/tetra/marching_tetrahedron/data/float/";
+    char molecule_name[100] = "9mxc";
+    char molecule_path_original[100] = "/home/fs72740/evaglietti/tetra/marching_tetrahedron/data/float/";
+    char molecule_name_original[100] = "9mxc";
     char *path = strcat(molecule_path, strcat(molecule_name, ".bin"));
     
-    double threshold = 4e-4;
+    dim_t threshold = 4e-4;
     
     printf("Creating surface from file '");
     printf(molecule_name);
@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 
     dim_t *grid;
 
-    double origin[3];
+    dim_t origin[3];
     
     
     int cube_decomposition[20] = {4,6,7,8,1,5,6,7,1,3,4,7,1,2,4,6,1,4,6,7};
@@ -43,13 +43,13 @@ int main(int argc, char *argv[]) {
 
     allocate_d_grid(&d_grid, grid, size);
 
-    int number_relevant_cubes;
     cube_gpu *d_relevant_cubes;
     cube_vertices_points *d_cube_points_coordinates;
 
-    skip_preprocessing(   d_grid, size, threshold, &dim,
-                                &number_relevant_cubes, &d_relevant_cubes,
-                                &d_cube_points_coordinates);
+    double time = 0.0;
+
+    skip_preprocessing(   d_grid, size, threshold, &dim, &d_relevant_cubes,
+                                &d_cube_points_coordinates, &time);
 
     printf("\n");
     
@@ -57,7 +57,6 @@ int main(int argc, char *argv[]) {
     size_t vertex_counter;
 
     printf("Number of processed cubes: %d\n", size);
-    printf("Number of relevant cubes: %d\n", number_relevant_cubes);
 
     Triangle_GPU *triangles = NULL;
 
@@ -65,12 +64,15 @@ int main(int argc, char *argv[]) {
 
     int pairs[48] = {1,2,1,3,1,4,2,2,1,3,1,4,2,2,3,3,1,4,2,2,3,3,4,4,1,4,2,4,3,3,1,4,2,4,3,4,1,4,2,4,1,3,2,4,2,3,1,3};
     
+    int total_triangles = 0;
+
     parallel_march_tetra(   &dim, d_grid, cube_decomposition, threshold, &triangles_count,
                             &vertex_counter, size, 
                             &d_relevant_cubes, &d_cube_points_coordinates, act_val_vec,
-                            pairs, &triangles);
+                            pairs, &triangles, &total_triangles, &time);
  
-    print_triangles(triangles, &number_relevant_cubes, molecule_name_original, molecule_path_original);
+    printf("Total GPU time: %f ms\n", time);
+    // print_triangles(triangles, &total_triangles, molecule_name_original, molecule_path_original);
 
 
     free(triangles);
