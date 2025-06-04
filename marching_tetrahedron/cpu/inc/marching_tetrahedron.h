@@ -21,6 +21,9 @@ void marching_tetrahedra_list(   Dimensions *dim, dim_t **grid, int *cube_decomp
                             dim_t*, dim_t*, dim_t), Polyhedra *p, size_t *triangles_count,
                             size_t *vertex_counter, int size, int *results);
 
+void marching_tetrahedra_notunique( Dimensions *dim, dim_t **grid, int *cube_decomposition, dim_t threshold, dim_t *origin,
+                                    size_t *triangle_counter, nonunique_triangle_node **start);   
+
 bool find_coordinates(  int idx, const int point, const size_t i, const size_t j, const size_t k,
                         CubeVertex **coordinates);
 int get_action_value(StackNode *start, dim_t threshold);

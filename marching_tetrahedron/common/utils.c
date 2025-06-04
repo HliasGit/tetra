@@ -244,3 +244,83 @@ void print_to_console_traingles(TriangleNode* start){
         start = start->next;
     }
 }
+
+void print_triangles_cpu(   nonunique_triangle_node *start,
+                        char *molecule_name, char *molecule_path){
+    struct stat st;
+
+    const char *folder = "../../results/";
+    strcat(molecule_path, folder);
+    strcat(molecule_path, molecule_name);
+
+    if (stat(molecule_path, &st) == 0 && S_ISDIR(st.st_mode)) {
+        char command[256];
+        snprintf(command, sizeof(command), "rm -rf %s", molecule_path);
+        if (system(command) != 0) {
+            fprintf(stderr, "Failed to remove existing folder: %s\n", molecule_path);
+            exit(-1);
+        }
+    }
+
+    if (stat(molecule_path, &st) == -1) {
+        mkdir(molecule_path, 0700);
+    }
+
+    strcat(molecule_path, "/");
+
+    int file_number = 0;
+    int local_counter = 0;
+    int empty = 0;
+
+    FILE *pdb_file;
+    while (start != NULL) {
+        
+        if(local_counter == 0){
+            char file_name[256];
+            strcpy(file_name, molecule_path);
+            strcat(file_name, molecule_name);
+            sprintf(file_name + strlen(file_name), "_%d", file_number);
+            strcat(file_name, ".pdb");
+            // printf("Writing triangles to file: %s\n", file_name);
+            pdb_file = fopen(file_name, "w");
+
+            // printf("Opening file: %s\n", file_name);
+            
+            if (!pdb_file) {
+                fprintf(stderr, "Failed to open points.pdb for writing.\n");
+            } 
+            file_number++;
+        }
+
+        // printf("Triangle %d:\n", local_counter/3);
+        // printf("    Vertex 1: (%f, %f, %f)\n", start->tri->v1->x, start->tri->v1->y, start->tri->v1->z);
+        // printf("    Vertex 2: (%f, %f, %f)\n", start->tri->v2->x, start->tri->v2->y, start->tri->v2->z);
+        // printf("    Vertex 3: (%f, %f, %f)\n", start->tri->v3->x, start->tri->v3->y, start->tri->v3->z);
+        
+        
+
+        fprintf(pdb_file, "ATOM  %5d C    PSE A   1    %8.2f%8.2f%8.2f 1.00  1.00           C\n", local_counter, start->tri->v1->x, start->tri->v1->y, start->tri->v1->z);
+        // printf("ATOM  %5d C    PSE A   1    %8.2f%8.2f%8.2f 1.00  1.00           C\n", local_counter, start->tri->v1->, start->tri->v1->y, start->tri->v1->z);
+        local_counter++;
+        fprintf(pdb_file, "ATOM  %5d C    PSE A   1    %8.2f%8.2f%8.2f 1.00  1.00           C\n", local_counter, start->tri->v2->x, start->tri->v2->y, start->tri->v2->z);
+        // printf("ATOM  %5d C    PSE A   1    %8.2f%8.2f%8.2f 1.00  1.00           C\n", local_counter, start->tri->v1->, start->tri->v1->y, start->tri->v1->z);
+        local_counter++;
+        fprintf(pdb_file, "ATOM  %5d C    PSE A   1    %8.2f%8.2f%8.2f 1.00  1.00           C\n", local_counter, start->tri->v3->x, start->tri->v3->y, start->tri->v3->z);
+        // printf("ATOM  %5d C    PSE A   1    %8.2f%8.2f%8.2f 1.00  1.00           C\n", local_counter, triangles[i].v3.x, triangles[i].v3.y, triangles[i].v3.z);
+        local_counter++;
+        fprintf(pdb_file, "CONECT%5d%5d\n", local_counter - 3, local_counter - 2);
+        fprintf(pdb_file, "CONECT%5d%5d\n", local_counter - 2, local_counter - 1);
+        fprintf(pdb_file, "CONECT%5d%5d\n", local_counter - 3, local_counter - 1);
+
+        if(local_counter == 33333 || start->next == NULL){
+            local_counter = 0;
+            fclose(pdb_file);
+        }
+
+        start = start->next;
+    }
+    printf("Relevant points written\n");
+
+
+    
+}

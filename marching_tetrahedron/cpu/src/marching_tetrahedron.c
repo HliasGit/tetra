@@ -597,3 +597,106 @@ void marching_tetrahedra_list(Dimensions *dim, dim_t **grid, int *cube_decomposi
     printf("# to be swapped: %8zu\n", count_swap);
     printf("# to be checked after swap: %8zu\n", re_count_swap);
 }
+
+void marching_tetrahedra_notunique( Dimensions *dim, dim_t **grid, int *cube_decomposition, dim_t threshold, dim_t *origin,
+                                    size_t *triangle_counter, nonunique_triangle_node **nonunique_list)
+{
+
+    CubeVertex *coordinates;
+    StackNode *stack = NULL;
+    (*triangle_counter) = 0;
+
+    size_t count_swap = 0;
+    size_t re_count_swap = 0;
+    bool res;
+
+    size_t progress = 0;
+    size_t tot_scan = dim->x_dim * dim->y_dim * dim->z_dim;
+
+    // for every cube in the space
+    for (size_t i = 0; i < dim->x_dim - 1; i++)
+    {
+        for (size_t j = 0; j < dim->y_dim - 1; j++)
+        {
+            for (size_t k = 0; k < dim->z_dim - 1; k++)
+            { // Cube global coordinate
+
+                progress = (i * dim->y_dim * dim->z_dim + j * dim->z_dim + k) * 100 / tot_scan;
+                static size_t last_progress = 0;
+                if (progress % 10 == 0 && progress != 0 && progress != last_progress)
+                {
+                    printf("Progress: %zu%%\r", progress); fflush(stdout);
+                    last_progress = progress;
+                }
+
+                int idx = 0;
+                int point = 0;
+
+                // check if every vertex in the cube is F(x,y,x) - C < threshold and in case skip it
+                for (int tetra = 0; tetra < 20; tetra += 4)
+                { // for every tetrahedron in a cube
+                    coordinates = malloc(4 * sizeof(CubeVertex));
+                    // printf("Tetra: %d, cube (%d,%d,%d)\n", tetra / 4 + 1, i, j, k);
+                    int permutations = 0;
+                    
+                    for (idx = tetra; idx < tetra + 4; idx++)
+                    { // for every point in a tetrahedra
+
+                        point = cube_decomposition[idx];
+
+                        // find the global tetrahedra coordinates.
+                        find_coordinates(idx - tetra, point, i, j, k, &coordinates);
+
+                        // get the # neg, # zero, # pos for each tetrahedron in the stack
+                        push_into_stack(&stack,
+                                        (*grid)[coordinates[idx - tetra].z +
+                                                coordinates[idx - tetra].y * dim->z_dim +
+                                                coordinates[idx - tetra].x * dim->z_dim * dim->y_dim],
+                                        coordinates[idx - tetra]);
+                    }
+
+                    // get the action value
+                    int action_value = get_action_value(stack, threshold);
+
+                    // get the pairs
+                    int *pairs = get_pairs(action_value);
+
+                    if (action_value != 0)
+                    {
+                        // build the triangle
+
+                        
+                        Triangle *new = (Triangle *) malloc (sizeof(Triangle));
+                        
+                        characterize_triangle(new, stack, pairs);                        
+                        push_triangle_nonunique(new, &(*triangle_counter), nonunique_list);
+                        (*triangle_counter)++;
+
+                        // build the second triangle in case the tetrahedra has two of them
+                        if (action_value == 7 ? true : false)
+                        {
+                            // Triangle *second_triangle = make_triangle(stack, pairs, true, threshold, func_ptr, is_positive_orientation);
+                            new = (Triangle *) malloc (sizeof(Triangle));
+                            pairs = pairs+6;
+                            characterize_triangle(new, stack, pairs);
+                            push_triangle_nonunique(new, &(*triangle_counter), nonunique_list);
+                            (*triangle_counter)++;
+                            pairs = pairs-6;
+                        }
+                    }
+
+                    free(pairs);
+                    free_stack(&stack);
+                    free(coordinates);
+                }
+            }
+        }
+    }
+
+    // Reverse the triangle list. Since I make it pushing from the head I have to reverse so the head has index 0
+    // reverse_list(&p->triangles);
+
+    printf("# of triangles: %8zu\n", (*triangle_counter));
+    printf("# to be swapped: %8zu\n", count_swap);
+    printf("# to be checked after swap: %8zu\n", re_count_swap);
+}

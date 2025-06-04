@@ -29,6 +29,8 @@ endmacro()
 
 # Test executables
 add_test_executable_c(main)
+add_test_executable_c(non_unique)
 add_test_executable_c(generator)
+
 add_test_executable_cpp(normals)
 add_test_executable_cpp(euler_characteristic)

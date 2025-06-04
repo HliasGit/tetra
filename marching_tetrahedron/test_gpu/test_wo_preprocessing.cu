@@ -11,9 +11,9 @@ int main(int argc, char *argv[]) {
     Dimensions dim;
 
     char molecule_path[100] = "/home/fs72740/evaglietti/tetra/marching_tetrahedron/data/float/";
-    char molecule_name[100] = "9mxc";
+    char molecule_name[100] = "adenosine";
     char molecule_path_original[100] = "/home/fs72740/evaglietti/tetra/marching_tetrahedron/data/float/";
-    char molecule_name_original[100] = "9mxc";
+    char molecule_name_original[100] = "adenosine";
     char *path = strcat(molecule_path, strcat(molecule_name, ".bin"));
     
     dim_t threshold = 4e-4;

@@ -345,3 +345,17 @@ void reverse_list(TriangleNode **head){
 
     *head = prev;
 }
+
+void push_triangle_nonunique(Triangle *triangle, size_t *triangle_counter, nonunique_triangle_node **start){
+    
+    nonunique_triangle_node *new = (nonunique_triangle_node*) malloc (sizeof(nonunique_triangle_node));
+    new->tri = triangle;
+    new->next = NULL;
+
+    if(*start == NULL){
+        *start = new;
+    } else {
+        new->next = *start;
+        *start = new;
+    }
+}

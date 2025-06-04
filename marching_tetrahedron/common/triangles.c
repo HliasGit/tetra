@@ -113,3 +113,38 @@ bool coordinate_less_than(TriangleVertex *v1, TriangleVertex *v2){ // LEXICOGRAP
 bool coordinate_equals(TriangleVertex *v1, TriangleVertex *v2){
     return (v1->x == v2->x) && (v1->y == v2->y) && (v1->z == v2->z);
 }
+
+void characterize_triangle(Triangle *tri, StackNode *stack, int *pairs){
+
+    // Allocate memory for triangle vertices if not already allocated
+    tri->v1 = (TriangleVertex *)malloc(sizeof(TriangleVertex));
+    tri->v2 = (TriangleVertex *)malloc(sizeof(TriangleVertex));
+    tri->v3 = (TriangleVertex *)malloc(sizeof(TriangleVertex));
+    
+    for (int i = 0; i < 3; i++) {
+
+        int idx1 = pairs[0 + i*2] - 1;
+        int idx2 = pairs[0 + i*2 + 1] - 1;
+
+        CubeVertex *point1 = get_coordinate_by_idx(stack, idx1);
+        CubeVertex *point2 = get_coordinate_by_idx(stack, idx2);
+
+        switch(i) {
+            case 0:
+                tri->v1->x = (coord_t)(point1->x + point2->x) / 2;
+                tri->v1->y = (coord_t)(point1->y + point2->y) / 2;
+                tri->v1->z = (coord_t)(point1->z + point2->z) / 2;
+                break;
+            case 1:
+                tri->v2->x = (coord_t)(point1->x + point2->x) / 2;
+                tri->v2->y = (coord_t)(point1->y + point2->y) / 2;
+                tri->v2->z = (coord_t)(point1->z + point2->z) / 2;
+                break;
+            case 2:
+                tri->v3->x = (coord_t)(point1->x + point2->x) / 2;
+                tri->v3->y = (coord_t)(point1->y + point2->y) / 2;
+                tri->v3->z = (coord_t)(point1->z + point2->z) / 2;
+                break;
+        }
+    }                            
+}

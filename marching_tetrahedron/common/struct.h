@@ -19,6 +19,7 @@ TriangleCoordNode *add(TriangleCoordNode **root, double *full_coordinate, size_t
 void free_tree(TriangleCoordNode *TriangleCoordNode);
 void free_list(TriangleNode *start);
 void reverse_list(TriangleNode **head);  
+void push_triangle_nonunique(Triangle *triangle, size_t *triangle_counter, nonunique_triangle_node **start);
 
 #ifdef __cplusplus
 }

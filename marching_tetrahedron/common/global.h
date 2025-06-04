@@ -76,5 +76,10 @@ typedef struct Polyhedra{
     TriangleCoordNode *root_vertices;
 } Polyhedra;
 
+typedef struct nonunique_triangle_node{
+    Triangle *tri;
+    struct nonunique_triangle_node *next;
+} nonunique_triangle_node;
+
 
 #endif //TETRA

@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
 
     Dimensions dim;
 
-    char molecule_path[100] = "/home/fs72740/evaglietti/tetra/marching_tetrahedron/data/";
+    char molecule_path[100] = "/home/fs72740/evaglietti/tetra/marching_tetrahedron/data/float/";
     char molecule_name[100];
     char molecule_name_original[100];
     char molecule_path_original[100];
@@ -70,6 +70,8 @@ int main(int argc, char *argv[]) {
     marching_tetrahedra(&dim, &grid, cube_decomposition, threshold, origin,
                         interpolation_function, &p, &triangles_count,
                         &vertex_counter);
+
+    
     end_marching = clock();
     double time_spent = (double)(end_marching - start_marching) / CLOCKS_PER_SEC;
     printf("Took %f seconds for the marhcing tetrahedron computation\n", time_spent);
@@ -86,38 +88,38 @@ int main(int argc, char *argv[]) {
 
     printf("Molecule name original: %s\n", molecule_name_original);
     
-    clock_t start_printing, end_printing;
-    start_printing = clock();
-    print_on_separate_files(&p, molecule_name_original, molecule_path_original, triangles_count);
-    end_printing = clock();
-    double time_spent_printing = (double)(end_printing - start_printing) / CLOCKS_PER_SEC;
-    printf("Took %f seconds for the printing\n", time_spent_printing);
+    // clock_t start_printing, end_printing;
+    // start_printing = clock();
+    // print_on_separate_files(&p, molecule_name_original, molecule_path_original, triangles_count);
+    // end_printing = clock();
+    // double time_spent_printing = (double)(end_printing - start_printing) / CLOCKS_PER_SEC;
+    // printf("Took %f seconds for the printing\n", time_spent_printing);
 
     // print_to_console_traingles(p.triangles);
 
-    FILE *grid_pdb_file = fopen("grid.pdb", "w");
-    if (!grid_pdb_file)
-    {
-        fprintf(stderr, "Failed to open grid.pdb for writing\n");
-        return -1;
-    }
+    // FILE *grid_pdb_file = fopen("grid.pdb", "w");
+    // if (!grid_pdb_file)
+    // {
+    //     fprintf(stderr, "Failed to open grid.pdb for writing\n");
+    //     return -1;
+    // }
 
     // Iterate through the grid dimensions and write the points
-    int atom_index = 1;
-    for (size_t x = 0; x < dim.x_dim; ++x)
-    {
-        for (size_t y = 0; y < dim.y_dim; ++y)
-        {
-            for (size_t z = 0; z < dim.z_dim; ++z)
-            {
-                fprintf(grid_pdb_file, "ATOM  %5d  C   GRD A   1    %8.3f%8.3f%8.3f  1.00  0.00           C\n",
-                        atom_index, (double)x, (double)y, (double)z);
-                atom_index++;
-            }
-        }
-    }
+    // int atom_index = 1;
+    // for (size_t x = 0; x < dim.x_dim; ++x)
+    // {
+    //     for (size_t y = 0; y < dim.y_dim; ++y)
+    //     {
+    //         for (size_t z = 0; z < dim.z_dim; ++z)
+    //         {
+    //             fprintf(grid_pdb_file, "ATOM  %5d  C   GRD A   1    %8.3f%8.3f%8.3f  1.00  0.00           C\n",
+    //                     atom_index, (double)x, (double)y, (double)z);
+    //             atom_index++;
+    //         }
+    //     }
+    // }
 
-    fclose(grid_pdb_file);
+    // fclose(grid_pdb_file);
     printf("Grid points have been written to grid.pdb\n");
 
     free(grid),
