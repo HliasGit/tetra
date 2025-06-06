@@ -16,7 +16,12 @@
 #include <stdbool.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
+#ifdef __cplusplus
+    extern "C"{
+#endif
 
 typedef float dim_t;    // type of the scalar field values
 typedef float coord_t;  // type for the coordinates (float or double)
@@ -81,5 +86,29 @@ typedef struct nonunique_triangle_node{
     struct nonunique_triangle_node *next;
 } nonunique_triangle_node;
 
+typedef struct cube_gpu {
+    int idx;
+    int x;
+    int y;
+    int z;
+    int one_apex[3];
+    int two_apex[3];
+    int _padding[6]; // ensure total size is 64 bytes
+} cube_gpu __attribute__((aligned(64)));
+
+typedef struct Triangle_GPU{
+    TriangleVertex v1;
+    TriangleVertex v2;
+    TriangleVertex v3;
+} Triangle_GPU;
+
+typedef struct cube_vertices_points{
+    CubeVertex coord;
+    dim_t value;
+} cube_vertices_points;
+
+#ifdef __cplusplus
+    }
+#endif
 
 #endif //TETRA

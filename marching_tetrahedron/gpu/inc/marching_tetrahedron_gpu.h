@@ -11,44 +11,20 @@
     extern "C"{
 #endif
 
-
-typedef struct __align__(64) cube_gpu {
-    int idx;
-    int x;
-    int y;
-    int z;
-    int one_apex[3];
-    int two_apex[3];
-    int _padding[6]; // ensure total size is 64 bytes
-} cube_gpu;
-
-
-typedef struct Triangle_GPU{
-    TriangleVertex v1;
-    TriangleVertex v2;
-    TriangleVertex v3;
-} Triangle_GPU;
-
-typedef struct cube_vertices_points{
-    CubeVertex coord;
-    dim_t value;
-} cube_vertices_points;
-
 void remove_unnecessary_cubes(  dim_t *d_grid, size_t cubes_in_domain, double threshold,
                                 Dimensions *dim, int *number_relevant_cubes,
                                 cube_gpu **d_relevant_cubes, cube_vertices_points **d_cube_points_coordinates,
                                 double *time);
 
-void skip_preprocessing(   dim_t *d_grid, size_t cubes_in_domain, double threshold,
-                                Dimensions *dim, cube_gpu **d_relevant_cubes,
-                                cube_vertices_points **d_cube_points_coordinates,
-                                double *time);
+void skip_preprocessing(size_t cubes_in_domain,
+                        Dimensions *dim, cube_gpu **d_relevant_cubes,
+                        double *time);
 
-void parallel_march_tetra   (Dimensions *dim, dim_t *grid, int *cube_decomposition, dim_t threshold,
-                            size_t *triangle_counter, size_t *vertex_counter, int number_relevant_cubes,
-                            cube_gpu **d_relevant_cubes, cube_vertices_points **cube_points_coordinates,
-                            int* act_val_vec, int* pairs, Triangle_GPU **triangles, int *total_triangles,
-                            double *time);
+void parallel_march_tetra   (   Dimensions *dim, dim_t *grid, int *cube_decomposition, dim_t threshold,
+                                int number_relevant_cubes,
+                                cube_gpu **d_relevant_cubes, cube_vertices_points **cube_points_coordinates,
+                                int* act_val_vec, int* pairs, Triangle_GPU **triangles, int *total_triangles,
+                                double *time);
 
 void allocate_d_grid(dim_t **d_grid, dim_t *grid, size_t size);
 

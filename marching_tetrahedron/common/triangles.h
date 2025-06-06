@@ -2,7 +2,6 @@
 #define TRIANGLES_H
 
 #include "global.h"
-#include "struct.h"
 
 #ifdef __cplusplus
 extern "C" {

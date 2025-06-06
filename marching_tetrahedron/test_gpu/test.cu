@@ -11,9 +11,9 @@ int main(int argc, char *argv[]) {
     Dimensions dim;
 
     char molecule_path[100] = "/home/fs72740/evaglietti/tetra/marching_tetrahedron/data/float/";
-    char molecule_name[100] = "adenosine";
+    char molecule_name[100] = "8spx";
     char molecule_path_original[100] = "/home/fs72740/evaglietti/tetra/marching_tetrahedron/data/float/";
-    char molecule_name_original[100] = "adenosine";
+    char molecule_name_original[100] = "8spx";
     char *path = strcat(molecule_path, strcat(molecule_name, ".bin"));
     
     dim_t threshold = 2;
@@ -53,9 +53,6 @@ int main(int argc, char *argv[]) {
                                 &d_cube_points_coordinates, &time);
 
     printf("\n");
-    
-    size_t triangles_count;
-    size_t vertex_counter;
 
     printf("Number of processed cubes: %d\n", size);
     printf("Number of relevant cubes: %d\n", number_relevant_cubes);
@@ -68,8 +65,7 @@ int main(int argc, char *argv[]) {
     
     int total_triangles = 0;
 
-    parallel_march_tetra(   &dim, d_grid, cube_decomposition, threshold, &triangles_count,
-                            &vertex_counter, number_relevant_cubes, 
+    parallel_march_tetra(   &dim, d_grid, cube_decomposition, threshold, number_relevant_cubes, 
                             &d_relevant_cubes, &d_cube_points_coordinates, act_val_vec,
                             pairs, &triangles, &total_triangles, &time);
 

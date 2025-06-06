@@ -48,13 +48,9 @@ int main(int argc, char *argv[]) {
 
     double time = 0.0;
 
-    skip_preprocessing(   d_grid, size, threshold, &dim, &d_relevant_cubes,
-                                &d_cube_points_coordinates, &time);
+    skip_preprocessing(   size, &dim, &d_relevant_cubes, &time);
 
     printf("\n");
-    
-    size_t triangles_count;
-    size_t vertex_counter;
 
     printf("Number of processed cubes: %d\n", size);
 
@@ -66,14 +62,12 @@ int main(int argc, char *argv[]) {
     
     int total_triangles = 0;
 
-    parallel_march_tetra(   &dim, d_grid, cube_decomposition, threshold, &triangles_count,
-                            &vertex_counter, size, 
+    parallel_march_tetra(   &dim, d_grid, cube_decomposition, threshold, size, 
                             &d_relevant_cubes, &d_cube_points_coordinates, act_val_vec,
                             pairs, &triangles, &total_triangles, &time);
  
     printf("Total GPU time: %f ms\n", time);
     // print_triangles(triangles, &total_triangles, molecule_name_original, molecule_path_original);
-
 
     free(triangles);
 

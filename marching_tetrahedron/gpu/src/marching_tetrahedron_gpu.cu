@@ -20,10 +20,6 @@ __global__ void remove_unnecessary_cubes_kernel(dim_t* grid, int *counter,
     int j = rem / DZ;
     int k = rem % DZ;
 
-    // if(idx == 39360)
-    //     printf("2 idx=%d, i=%d, j=%d, k=%d, rem=%d\n", idx, i, j, k, rem);
-    // if(idx == 39360)
-    //     printf("3 idx=%d, i=%d, j=%d, k=%d, rem=%d\n", idx, i, j, k, rem);
     bool all_in;
     bool all_out;
 
@@ -63,7 +59,7 @@ __global__ void remove_unnecessary_cubes_kernel(dim_t* grid, int *counter,
 
 }
 
-__global__ void skip_preprocessing_k(dim_t* grid,size_t size, double threshold,Dimensions *dim, cube_gpu* d_relevant_cubes) {
+__global__ void skip_preprocessing_k(size_t size, Dimensions *dim, cube_gpu* d_relevant_cubes) {
 
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -179,9 +175,6 @@ __global__ void compute_march_tetra(    dim_t *d_grid, cube_gpu *d_relevant_cube
 
     if(tid >= number_relevant_cubes) return;
 
-    int  bello = 0;
-
-
     if( d_relevant_cubes[tid].x >= dim->x_dim-1 ||
         d_relevant_cubes[tid].y >= dim->y_dim-1 ||
         d_relevant_cubes[tid].z >= dim->z_dim-1 ){
@@ -207,13 +200,13 @@ __global__ void compute_march_tetra(    dim_t *d_grid, cube_gpu *d_relevant_cube
         if (act_val!= 0){
             int *use_pairs = &d_pairs[6*(act_val-1)];
 
-            make_triangle(first, second, third, fourth, &d_triangles[tid*5+tetra], use_pairs, d_relevant_cubes[tid].idx == bello);
+            make_triangle(first, second, third, fourth, &d_triangles[tid*5+tetra], use_pairs);
 
             if(act_val == 7){
                 use_pairs = &d_pairs[42]; // 42 beacuse it's 6*7. 
                 int insert_pos = atomicAdd(d_counter, 1);
 
-                make_triangle(first, second, third, fourth, &d_triangles[number_relevant_cubes*5 + insert_pos], use_pairs, d_relevant_cubes[tid].idx == bello);
+                make_triangle(first, second, third, fourth, &d_triangles[number_relevant_cubes*5 + insert_pos], use_pairs);
             }
         }
     }
@@ -221,7 +214,7 @@ __global__ void compute_march_tetra(    dim_t *d_grid, cube_gpu *d_relevant_cube
 
 __device__ void make_triangle(  cube_vertices_points *first, cube_vertices_points *second,
                                 cube_vertices_points *third, cube_vertices_points *fourth,
-                                Triangle_GPU *triangle, int *pairs, bool debug){
+                                Triangle_GPU *triangle, int *pairs){
 
     cube_vertices_points* arr[4] = {first, second, third, fourth};
     
@@ -232,10 +225,6 @@ __device__ void make_triangle(  cube_vertices_points *first, cube_vertices_point
     triangle->v1.y = ((coord_t)arr[idx1]->coord.y + (coord_t)arr[idx2]->coord.y) / 2.0;
     triangle->v1.z = ((coord_t)arr[idx1]->coord.z + (coord_t)arr[idx2]->coord.z) / 2.0;
 
-    if (debug) {
-        printf("Triangle v1: (%f, %f, %f)\n", triangle->v1.x, triangle->v1.y, triangle->v1.z);
-    }
-
     idx1 = pairs[2] - 1;
     idx2 = pairs[3] - 1;
 
@@ -243,20 +232,12 @@ __device__ void make_triangle(  cube_vertices_points *first, cube_vertices_point
     triangle->v2.y = ((coord_t)arr[idx1]->coord.y + (coord_t)arr[idx2]->coord.y) / 2.0;
     triangle->v2.z = ((coord_t)arr[idx1]->coord.z + (coord_t)arr[idx2]->coord.z) / 2.0;
 
-    if (debug) {
-        printf("Triangle v2: (%f, %f, %f)\n", triangle->v2.x, triangle->v2.y, triangle->v2.z);
-    }
-
     idx1 = pairs[4] - 1;
     idx2 = pairs[5] - 1;
     
     triangle->v3.x = ((coord_t)arr[idx1]->coord.x + (coord_t)arr[idx2]->coord.x) / 2.0;
     triangle->v3.y = ((coord_t)arr[idx1]->coord.y + (coord_t)arr[idx2]->coord.y) / 2.0;
     triangle->v3.z = ((coord_t)arr[idx1]->coord.z + (coord_t)arr[idx2]->coord.z) / 2.0;
-
-    if (debug) {
-        printf("Triangle v3: (%f, %f, %f)\n\n", triangle->v3.x, triangle->v3.y, triangle->v3.z);
-    }
 }
 
 __device__ int get_action_value( int less, int eq, int gre){
@@ -308,7 +289,6 @@ __device__ void count_elements( int *less, int *eq, int *gre, cube_vertices_poin
     }
 }
 
-// TODO SISTEMA IL DOPPIO ASTERISCO
 __device__ void sort_points(cube_vertices_points **first, cube_vertices_points **second, cube_vertices_points **third, cube_vertices_points **fourth){
 
     cube_vertices_points* arr[4] = {*first, *second, *third, *fourth};
@@ -328,8 +308,15 @@ __device__ void sort_points(cube_vertices_points **first, cube_vertices_points *
     *fourth = arr[3];
 }
 
-
-
+/// @brief Pre-proccessing phase to remove cubes that will not be part of the computation
+/// @param d_grid Pointer to device memorized grid
+/// @param cubes_in_domain Total size of the domain
+/// @param threshold 
+/// @param dim 
+/// @param number_relevant_cubes 
+/// @param d_relevant_cubes Pointer to device that will be allocated in the function
+/// @param d_cube_points_coordinates Pointer to device that will be allocated in the function
+/// @param time 
 void remove_unnecessary_cubes(  dim_t *d_grid, size_t cubes_in_domain, double threshold,
                                 Dimensions *dim, int *number_relevant_cubes,
                                 cube_gpu **d_relevant_cubes, cube_vertices_points **d_cube_points_coordinates,
@@ -353,10 +340,9 @@ void remove_unnecessary_cubes(  dim_t *d_grid, size_t cubes_in_domain, double th
     // Data structure for the dimensions
     Dimensions *d_dim;
     print_cuda_error(cudaMallocManaged(&d_dim, sizeof(Dimensions)), "cudaMallocManaged failed for d_dim: %s");
-    *d_dim = *dim;      // Copy the DS from the serial code
+    *d_dim = *dim;
 
     print_cuda_error(cudaMallocManaged(d_relevant_cubes, sizeof(cube_gpu)*cubes_in_domain), "cudaMallocManaged failed for d_relevant_cubes:");
-    
     
     // Setup time reader for the kernel
     cudaEvent_t start, stop;
@@ -390,11 +376,24 @@ void remove_unnecessary_cubes(  dim_t *d_grid, size_t cubes_in_domain, double th
     print_cuda_error(cudaGetLastError(), "CUDA error");
     printf("remove_unnecessary_cubes_kernel executed successfully.\n");
 
-    print_relevant_points(*d_relevant_cubes, number_relevant_cubes);
+    // print_relevant_points(*d_relevant_cubes, number_relevant_cubes);
 }
 
+/// @brief Function that given the cubes in the space can compute the tetrahedra and the tre triangles
+/// @param dim 
+/// @param d_grid Pointer to the device memorized domain
+/// @param cube_decomposition Decomposition of a cube in set of tetrahedra
+/// @param threshold 
+/// @param number_relevant_cubes 
+/// @param d_relevant_cubes 
+/// @param d_cube_points_coordinates 
+/// @param act_val_vec Vector to act_val fast access
+/// @param pairs Vectot to access pairs
+/// @param triangles Pointer that will keep the generated triangles on host
+/// @param total_triangles 
+/// @param time 
 void parallel_march_tetra   (Dimensions *dim, dim_t *d_grid, int *cube_decomposition, dim_t threshold,
-                            size_t *triangle_counter, size_t *vertex_counter, int number_relevant_cubes,
+                            int number_relevant_cubes,
                             cube_gpu **d_relevant_cubes, cube_vertices_points **d_cube_points_coordinates,
                             int* act_val_vec, int *pairs, Triangle_GPU **triangles, int *total_triangles,
                             double *time)
@@ -450,9 +449,6 @@ void parallel_march_tetra   (Dimensions *dim, dim_t *d_grid, int *cube_decomposi
     printf("# blocks                            %d \nand # threads                       %d \n", n_blocks, n_threads);
     
     //      //      //      // MALLOC AND MANAGE //     //      //      //
-
-    (*vertex_counter) = 0;
-    (*triangle_counter) = 0;
 
     int *d_cube_decomposition;
     print_cuda_error(cudaMalloc(&d_cube_decomposition, sizeof(int)*20), "cudaMalloc failed for d_cube_decomposition: %s\n");
@@ -540,9 +536,13 @@ void parallel_march_tetra   (Dimensions *dim, dim_t *d_grid, int *cube_decomposi
     cudaFree(pool_index);
 }
 
-void skip_preprocessing(  dim_t *d_grid, size_t cubes_in_domain, double threshold,
+/// @brief Skip the pre-processing pass and prepare the DS needed to use the MT algorithm
+/// @param cubes_in_domain Total size of the domain (x_dim * y_dim * z_dim)
+/// @param dim 
+/// @param d_relevant_cubes Device pointer to the DS that keeps all the cubes
+/// @param time 
+void skip_preprocessing(  size_t cubes_in_domain,
                                 Dimensions *dim, cube_gpu **d_relevant_cubes,
-                                cube_vertices_points **d_cube_points_coordinates,
                                 double *time)
 {
     //      //      //      // GENERAL INFO KERNEL 1 //      //      //      //
@@ -562,7 +562,6 @@ void skip_preprocessing(  dim_t *d_grid, size_t cubes_in_domain, double threshol
 
     print_cuda_error(cudaMallocManaged(d_relevant_cubes, sizeof(cube_gpu)*cubes_in_domain), "cudaMallocManaged failed for d_relevant_cubes:");
     
-    
     // Setup time reader for the kernel
     cudaEvent_t start, stop;
     float elapsedTime = 0;
@@ -570,7 +569,7 @@ void skip_preprocessing(  dim_t *d_grid, size_t cubes_in_domain, double threshol
     cudaEventCreate(&stop);
     cudaEventRecord(start, 0);
     
-    skip_preprocessing_k<<<n_blocks, n_threads>>>(   d_grid, cubes_in_domain, threshold, d_dim,*d_relevant_cubes);
+    skip_preprocessing_k<<<n_blocks, n_threads>>>(cubes_in_domain, d_dim,*d_relevant_cubes);
     cudaDeviceSynchronize();
 
     cudaEventRecord(stop, 0);
@@ -592,8 +591,11 @@ void skip_preprocessing(  dim_t *d_grid, size_t cubes_in_domain, double threshol
     printf("remove_unnecessary_cubes_kernel executed successfully.\n");
 }
 
+/// @brief Function to allocate on device the ED scalar field 
+/// @param d_grid Pointer to the device memory
+/// @param grid Pointer to the host memory
+/// @param size Number of elements to be allocated
 void allocate_d_grid(dim_t **d_grid, dim_t *grid, size_t size){
-
     cudaError_t err;
     err = cudaMalloc(d_grid, sizeof(dim_t) * size);
     if (err != cudaSuccess) {
@@ -605,9 +607,10 @@ void allocate_d_grid(dim_t **d_grid, dim_t *grid, size_t size){
     }
 }
 
+/// @brief Debug utility to print the pints after the pre-processing pass
+/// @param d_relevant_cubes Pointer to the device allocated DS of cube_gpu 
+/// @param number_relevant_cubes 
 void print_relevant_points(cube_gpu *d_relevant_cubes, int *number_relevant_cubes){
-
-
     // Remove "points" directory if it exists, then create it and change into it
     struct stat st = {0};
     if (stat("points", &st) == 0) {
@@ -634,7 +637,6 @@ void print_relevant_points(cube_gpu *d_relevant_cubes, int *number_relevant_cube
             file_number++;
             local_counter=0;
         }
-
             
         int x = d_relevant_cubes[i].x;
         int y = d_relevant_cubes[i].y;
@@ -652,7 +654,12 @@ void print_relevant_points(cube_gpu *d_relevant_cubes, int *number_relevant_cube
     chdir("..");
 }
 
-void print_triangles(   Triangle_GPU *triangles, int *number_relevant_cubes,
+/// @brief Utility function to print the GPU triangles
+/// @param triangles Pointer to the triangles
+/// @param triangles_number 
+/// @param molecule_name 
+/// @param molecule_path 
+void print_triangles(   Triangle_GPU *triangles, int *triangles_number,
                         char *molecule_name, char *molecule_path){
     struct stat st;
 
@@ -679,10 +686,10 @@ void print_triangles(   Triangle_GPU *triangles, int *number_relevant_cubes,
     int local_counter = 0;
     int empty = 0;
 
-    printf("Number of triangles to print: %d\n", *number_relevant_cubes);
+    printf("Number of triangles to print: %d\n", *triangles_number);
 
     FILE *pdb_file;
-    for (int i = 0; i < *number_relevant_cubes; i++) {
+    for (int i = 0; i < *triangles_number; i++) {
         
         if(local_counter == 0){
             char file_name[256];
@@ -736,10 +743,11 @@ void print_triangles(   Triangle_GPU *triangles, int *number_relevant_cubes,
     
 }
 
-
+/// @brief Utility function to print CUDA errors with a message
+/// @param err CUDA error code
+/// @param msg Custom message to print with the error
 void print_cuda_error(cudaError_t err, const char* msg){
     if (err != cudaSuccess) {
         fprintf(stderr, "error failed: %s\nMsg: %s\n", cudaGetErrorString(err), msg);
     }
 }
-
