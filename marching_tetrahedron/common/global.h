@@ -92,7 +92,7 @@ typedef struct cube_gpu {
     int y;
     int z;
     int one_apex[3];
-    int two_apex[3];
+   int two_apex[3]; 
     int _padding[6]; // ensure total size is 64 bytes
 } cube_gpu __attribute__((aligned(64)));
 

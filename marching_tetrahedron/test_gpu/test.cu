@@ -8,15 +8,28 @@
 
 int main(int argc, char *argv[]) {
 
+    if (argc < 3) {
+        fprintf(stderr, "Usage: %s <threshold> <molecule_name>\n", argv[0]);
+        return -1;
+    }
+
     Dimensions dim;
 
     char molecule_path[100] = "/home/fs72740/evaglietti/tetra/marching_tetrahedron/data/float/";
-    char molecule_name[100] = "8spx";
-    char molecule_path_original[100] = "/home/fs72740/evaglietti/tetra/marching_tetrahedron/data/float/";
-    char molecule_name_original[100] = "8spx";
+    char molecule_name[100];
+    char molecule_name_original[100];
+    char molecule_path_original[100];
+    strcpy(molecule_name, argv[2]);
+    strcpy(molecule_path_original, molecule_path);
+    strcpy(molecule_name_original, molecule_name);
     char *path = strcat(molecule_path, strcat(molecule_name, ".bin"));
     
-    dim_t threshold = 2;
+    char *endptr;
+    dim_t threshold = strtod(argv[1], &endptr);
+    if (*endptr != '\0') {
+        fprintf(stderr, "Invalid threshold value: %s\n", argv[1]);
+        return -1;
+    }
     
     printf("Creating surface from file '");
     printf(molecule_name);
@@ -74,12 +87,9 @@ int main(int argc, char *argv[]) {
 
     printf("Total GPU time: %f ms\n", time);
 
- 
     // print_triangles(triangles, &total_triangles, molecule_name_original, molecule_path_original);
-
-
+    
     free(triangles);
-
 
     return 0;
 }

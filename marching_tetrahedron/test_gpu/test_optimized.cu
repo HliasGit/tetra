@@ -41,6 +41,7 @@ int main(int argc, char *argv[]) {
 
     dim_t origin[3];
     
+    double time = 0;
     
     int cube_decomposition[20] = {4,6,7,8,1,5,6,7,1,3,4,7,1,2,4,6,1,4,6,7};
     
@@ -56,16 +57,17 @@ int main(int argc, char *argv[]) {
 
     allocate_d_grid(&d_grid, grid, size);
 
-    cube_gpu *d_relevant_cubes;
-    cube_vertices_points *d_cube_points_coordinates;
+    int number_relevant_cubes;
+    cube_gpu_SoA *d_relevant_cubes;
+    cube_vertices_points_SoA *d_cube_points_coordinates;
 
-    double time = 0.0;
-
-    skip_preprocessing(   size, &dim, &d_relevant_cubes, &time);
+    remove_unnecessary_cubes(   d_grid, size, threshold, &dim,
+                                &number_relevant_cubes, &d_relevant_cubes, &time);
 
     printf("\n");
 
     printf("Number of processed cubes: %d\n", size);
+    printf("Number of relevant cubes: %d\n", number_relevant_cubes);
 
     Triangle_GPU *triangles = NULL;
 
@@ -75,15 +77,18 @@ int main(int argc, char *argv[]) {
     
     int total_triangles = 0;
 
-    parallel_march_tetra(   &dim, d_grid, cube_decomposition, threshold, size, 
-                            &d_relevant_cubes, &d_cube_points_coordinates, act_val_vec,
+    parallel_march_tetra(   &dim, d_grid, cube_decomposition, threshold, number_relevant_cubes, 
+                            d_relevant_cubes, &d_cube_points_coordinates, act_val_vec,
                             pairs, &triangles, &total_triangles, &time);
- 
+
+    // Place the code you want to time here, e.g. the parallel_march_tetra call
+    // (If you want to time only parallel_march_tetra, move the event code above and below that call.)
+
     printf("Total GPU time: %f ms\n", time);
+
     // print_triangles(triangles, &total_triangles, molecule_name_original, molecule_path_original);
-
+    
     free(triangles);
-
 
     return 0;
 }
