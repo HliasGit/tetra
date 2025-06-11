@@ -42,3 +42,5 @@ void print_relevant_points(cube_gpu *d_relevant_cubes, int *number_relevant_cube
 
 void print_triangles(   Triangle_GPU *d_relevant_cubes, int *number_relevant_cubes,
                         char *molecule_name, char *molecule_path);
+
+void print_relevant_points_soa(cube_gpu_SoA *d_relevant_cubes, int *number_relevant_cubes);
