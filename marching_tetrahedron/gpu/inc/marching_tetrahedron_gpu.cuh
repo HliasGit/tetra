@@ -13,7 +13,7 @@ __global__ void remove_unnecessary_cubes_kernel(dim_t *grid, int *counter,
 
 __global__ void remove_unnecessary_cubes_SoA_kernel(dim_t *grid, int *counter,
                                                 size_t size, double threshold,
-                                                Dimensions *dim, cube_gpu_SoA *d_relevant_cubes);
+                                                cube_gpu_SoA *d_relevant_cubes);
                                                 
 __global__ void skip_preprocessing_k(size_t size,
                                     Dimensions *dim, cube_gpu* d_relevant_cubes);
@@ -34,7 +34,7 @@ __global__ void compute_march_tetra_SoA(dim_t *d_grid, cube_gpu_SoA *d_relevant_
                                         cube_vertices_points_SoA *d_cube_points_coordinates,
                                         cube_vertices_points_SoA *memory_pool, int *pool_index,
                                         dim_t threshold, int* act_val_vec, int *d_pairs,
-                                        Triangle_GPU *d_triangles, int *d_counter, Dimensions *dim);
+                                        Triangle_GPU *d_triangles, int *d_counter);
 
 __device__ void sort_points(cube_vertices_points **first, cube_vertices_points **second,
                             cube_vertices_points **third, cube_vertices_points **fourth);

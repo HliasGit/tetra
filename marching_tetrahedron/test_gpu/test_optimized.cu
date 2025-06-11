@@ -48,6 +48,8 @@ int main(int argc, char *argv[]) {
     read_file(path, &dim, &grid, origin);
 
     printf("Grid dimensions: x = %d, y = %d, z = %d\n", dim.x_dim, dim.y_dim, dim.z_dim);
+
+    load_dim_to_const(&dim);
     
     ////////////////////////// MARCH TETRA //////////////////////////
     
@@ -61,7 +63,7 @@ int main(int argc, char *argv[]) {
     cube_gpu_SoA *d_relevant_cubes;
     cube_vertices_points_SoA *d_cube_points_coordinates;
 
-    remove_unnecessary_cubes(   d_grid, size, threshold, &dim,
+    remove_unnecessary_cubes(   d_grid, size, threshold,
                                 &number_relevant_cubes, &d_relevant_cubes, &time);
 
     printf("\n");
@@ -77,7 +79,7 @@ int main(int argc, char *argv[]) {
     
     int total_triangles = 0;
 
-    parallel_march_tetra(   &dim, d_grid, cube_decomposition, threshold, number_relevant_cubes, 
+    parallel_march_tetra(   d_grid, cube_decomposition, threshold, number_relevant_cubes, 
                             d_relevant_cubes, &d_cube_points_coordinates, act_val_vec,
                             pairs, &triangles, &total_triangles, &time);
 
@@ -86,7 +88,7 @@ int main(int argc, char *argv[]) {
 
     printf("Total GPU time: %f ms\n", time);
 
-    print_triangles(triangles, &total_triangles, molecule_name_original, molecule_path_original);
+    // print_triangles(triangles, &total_triangles, molecule_name_original, molecule_path_original);
     
     free(triangles);
 

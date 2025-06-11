@@ -1,29 +1,27 @@
 #include <marching_tetrahedron_gpu.h>
 #include <marching_tetrahedron_gpu.cuh>
 
+__constant__ int4 dim;
+
 __global__ void remove_unnecessary_cubes_SoA_kernel(dim_t* grid, int *counter,
                                                 size_t size, double threshold,
-                                                Dimensions *dim, cube_gpu_SoA* d_relevant_cubes) {
+                                                cube_gpu_SoA* d_relevant_cubes) {
 
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     if(idx >= size) return;
-    
-    int DZ = dim->z_dim;
-    int DY = dim->y_dim;
-    int DX = dim->x_dim;
 
-    int i = idx / (DZ * DY);
+    int i = idx / (dim.z * dim.y);
 
-    int rem = idx % (DZ * DY);
+    int rem = idx % (dim.z * dim.y);
 
-    int j = rem / DZ;
-    int k = rem % DZ;
+    int j = rem / dim.z;
+    int k = rem % dim.z;
 
     bool all_in;
     bool all_out;
 
-    if(k == DZ-1 || j == DY-1 || i == DX-1){
+    if(k == dim.z-1 || j == dim.y-1 || i == dim.x-1){
         all_in = 0;
         all_out = 0;
 
@@ -31,22 +29,22 @@ __global__ void remove_unnecessary_cubes_SoA_kernel(dim_t* grid, int *counter,
         all_out =
             (grid[idx] < threshold) &&
             (grid[idx+1] < threshold) &&
-            (grid[idx + DZ] < threshold) &&
-            (grid[idx + DZ+1] < threshold) &&
-            (grid[idx + DZ * DY] < threshold) &&
-            (grid[idx + DZ * DY + 1] < threshold) &&
-            (grid[idx + DZ * DY + DZ] < threshold) &&
-            (grid[idx + DZ * DY + DZ+1] < threshold);
+            (grid[idx + dim.z] < threshold) &&
+            (grid[idx + dim.z+1] < threshold) &&
+            (grid[idx + dim.z * dim.y] < threshold) &&
+            (grid[idx + dim.z * dim.y + 1] < threshold) &&
+            (grid[idx + dim.z * dim.y + dim.z] < threshold) &&
+            (grid[idx + dim.z * dim.y + dim.z+1] < threshold);
 
         all_in =
             (grid[idx] > threshold) &&
             (grid[idx+1] > threshold) &&
-            (grid[idx + DZ] > threshold) &&
-            (grid[idx + DZ+1] > threshold) &&
-            (grid[idx + DZ * DY] > threshold) &&
-            (grid[idx + DZ * DY + 1] > threshold) &&
-            (grid[idx + DZ * DY + DZ] > threshold) &&
-            (grid[idx + DZ * DY + DZ+1] > threshold);
+            (grid[idx + dim.z] > threshold) &&
+            (grid[idx + dim.z+1] > threshold) &&
+            (grid[idx + dim.z * dim.y] > threshold) &&
+            (grid[idx + dim.z * dim.y + 1] > threshold) &&
+            (grid[idx + dim.z * dim.y + dim.z] > threshold) &&
+            (grid[idx + dim.z * dim.y + dim.z+1] > threshold);
     }
 
     if (all_out == 0 && all_in == 0){
@@ -61,14 +59,14 @@ __global__ void remove_unnecessary_cubes_SoA_kernel(dim_t* grid, int *counter,
 }
 
 __global__ void compute_apex_float4(   dim_t *grid, cube_gpu_SoA *d_relevant_cubes, int number_relevant_cubes,
-                                cube_vertices_points_SoA *d_cube_points_coordinates, Dimensions *dim){
+                                cube_vertices_points_SoA *d_cube_points_coordinates){
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
 
     if(tid >= number_relevant_cubes) return;
 
-    if( d_relevant_cubes->coord_idx[tid].x >= dim->x_dim-1 ||
-        d_relevant_cubes->coord_idx[tid].y >= dim->y_dim-1 ||
-        d_relevant_cubes->coord_idx[tid].z >= dim->z_dim-1 ){
+    if( d_relevant_cubes->coord_idx[tid].x >= dim.x-1 ||
+        d_relevant_cubes->coord_idx[tid].y >= dim.y-1 ||
+        d_relevant_cubes->coord_idx[tid].z >= dim.z-1 ){
             return;
         }
 
@@ -140,8 +138,8 @@ __global__ void compute_apex_float4(   dim_t *grid, cube_gpu_SoA *d_relevant_cub
     
     for(int v=0; v<8; v++){
         d_cube_points_coordinates[tid * 8 + v].val.w = grid[(int)(d_cube_points_coordinates[tid * 8 + v].val.z +
-                                                            d_cube_points_coordinates[tid * 8 + v].val.y * dim->z_dim +
-                                                            d_cube_points_coordinates[tid * 8 + v].val.x * dim->z_dim * dim->y_dim)];
+                                                            d_cube_points_coordinates[tid * 8 + v].val.y * dim.z +
+                                                            d_cube_points_coordinates[tid * 8 + v].val.x * dim.z * dim.y)];
     }
 }
 
@@ -150,15 +148,15 @@ __global__ void compute_march_tetra_SoA(dim_t *d_grid, cube_gpu_SoA *d_relevant_
                                         cube_vertices_points_SoA *d_cube_points_coordinates,
                                         cube_vertices_points_SoA *memory_pool, int *pool_index,
                                         dim_t threshold, int* act_val_vec, int *d_pairs,
-                                        Triangle_GPU *d_triangles, int *d_counter, Dimensions *dim){
+                                        Triangle_GPU *d_triangles, int *d_counter){
 
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
 
     if(tid >= number_relevant_cubes) return;
 
-    if( d_relevant_cubes->coord_idx[tid].x >= dim->x_dim-1 ||
-        d_relevant_cubes->coord_idx[tid].y >= dim->y_dim-1 ||
-        d_relevant_cubes->coord_idx[tid].z >= dim->z_dim-1 ){
+    if( d_relevant_cubes->coord_idx[tid].x >= dim.x-1 ||
+        d_relevant_cubes->coord_idx[tid].y >= dim.y-1 ||
+        d_relevant_cubes->coord_idx[tid].z >= dim.z-1 ){
             return;
         }
 
@@ -257,7 +255,7 @@ __device__ void sort_points_SoA(cube_vertices_points_SoA **first, cube_vertices_
 }
 
 void remove_unnecessary_cubes(  dim_t *d_grid, size_t cubes_in_domain, double threshold,
-                                Dimensions *dim, int *number_relevant_cubes,
+                                int *number_relevant_cubes,
                                 cube_gpu_SoA **d_relevant_cubes,
                                 double *time)
 {
@@ -275,11 +273,6 @@ void remove_unnecessary_cubes(  dim_t *d_grid, size_t cubes_in_domain, double th
     int *d_number_relevant_cubes;
     print_cuda_error(cudaMallocManaged(&d_number_relevant_cubes, sizeof(int)), "cudaMallocManaged failed for d_number_relevant_cubes");
     *d_number_relevant_cubes = 0;    // Initialize to 0
-
-    // Data structure for the dimensions
-    Dimensions *d_dim;
-    print_cuda_error(cudaMallocManaged(&d_dim, sizeof(Dimensions)), "cudaMallocManaged failed for d_dim: %s");
-    *d_dim = *dim;
 
     float4 *d_coord_idx;
     float4 *d_one_apex;
@@ -305,7 +298,7 @@ void remove_unnecessary_cubes(  dim_t *d_grid, size_t cubes_in_domain, double th
     cudaEventRecord(start, 0);
     
     remove_unnecessary_cubes_SoA_kernel<<<n_blocks, n_threads>>>(   d_grid, d_number_relevant_cubes,
-                                                                cubes_in_domain, threshold, d_dim,
+                                                                cubes_in_domain, threshold,
                                                                 *d_relevant_cubes);
     cudaDeviceSynchronize();
 
@@ -329,10 +322,10 @@ void remove_unnecessary_cubes(  dim_t *d_grid, size_t cubes_in_domain, double th
     print_cuda_error(cudaGetLastError(), "CUDA error");
     printf("remove_unnecessary_cubes_kernel executed successfully.\n");
 
-    print_relevant_points_soa(*d_relevant_cubes, number_relevant_cubes);
+    // print_relevant_points_soa(*d_relevant_cubes, number_relevant_cubes);
 }
 
-void parallel_march_tetra   (Dimensions *dim, dim_t *d_grid, int *cube_decomposition, dim_t threshold,
+void parallel_march_tetra   (dim_t *d_grid, int *cube_decomposition, dim_t threshold,
                             int number_relevant_cubes,
                             cube_gpu_SoA *d_relevant_cubes, cube_vertices_points_SoA **d_cube_points_coordinates,
                             int* act_val_vec, int *pairs, Triangle_GPU **triangles, int *total_triangles,
@@ -348,11 +341,6 @@ void parallel_march_tetra   (Dimensions *dim, dim_t *d_grid, int *cube_decomposi
 
     //      //      //      // MALLOC AND MANAGE //     //      //      //
 
-    // Data structure for the dimensions
-    Dimensions *d_dim;
-    print_cuda_error(cudaMallocManaged(&d_dim, sizeof(Dimensions)), "cudaMallocManaged failed for d_dim: %s");
-    *d_dim = *dim;      // Copy the DS from the serial code
-
     print_cuda_error(cudaMallocManaged(d_cube_points_coordinates, sizeof(cube_vertices_points_SoA)*(number_relevant_cubes)*8), "cudaMalloc failed for d_cube_points_coordinates");
 
     printf("Allocating %zu bytes for d_cube_points_coordinates\n", sizeof(cube_vertices_points_SoA)*(number_relevant_cubes)*8);
@@ -366,7 +354,7 @@ void parallel_march_tetra   (Dimensions *dim, dim_t *d_grid, int *cube_decomposi
     cudaEventCreate(&apex_stop);
     cudaEventRecord(apex_start, 0);
 
-    compute_apex_float4<<<n_blocks, n_threads>>>(d_grid, d_relevant_cubes, number_relevant_cubes, *d_cube_points_coordinates, d_dim);
+    compute_apex_float4<<<n_blocks, n_threads>>>(d_grid, d_relevant_cubes, number_relevant_cubes, *d_cube_points_coordinates);
     cudaDeviceSynchronize();
 
     cudaEventRecord(apex_stop, 0);
@@ -428,7 +416,7 @@ void parallel_march_tetra   (Dimensions *dim, dim_t *d_grid, int *cube_decomposi
                                                     number_relevant_cubes, d_cube_decomposition,
                                                     *d_cube_points_coordinates, d_stack_pool, pool_index,
                                                     threshold, d_act_val_vec, d_pairs,
-                                                    d_triangles, d_counter, d_dim);
+                                                    d_triangles, d_counter);
     cudaDeviceSynchronize();
 
     printf("Kernel MT terminated\n");
@@ -475,4 +463,14 @@ void parallel_march_tetra   (Dimensions *dim, dim_t *d_grid, int *cube_decomposi
     cudaFree(d_counter);
     cudaFree(d_stack_pool);
     cudaFree(pool_index);
+}
+
+void load_dim_to_const(Dimensions *dimensions){
+    int4 tmp;
+    tmp.x = dimensions->x_dim;
+    tmp.y = dimensions->y_dim;
+    tmp.z = dimensions->z_dim;
+
+    tmp.w = 0.0f;
+    cudaMemcpyToSymbol(dim, &tmp, sizeof(int4));
 }
