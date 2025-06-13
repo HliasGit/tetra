@@ -329,7 +329,7 @@ void remove_unnecessary_cubes(  dim_t *d_grid, size_t cubes_in_domain, double th
     print_cuda_error(cudaGetLastError(), "CUDA error");
     printf("remove_unnecessary_cubes_kernel executed successfully.\n");
 
-    print_relevant_points_soa(*d_relevant_cubes, number_relevant_cubes);
+    // print_relevant_points_soa(*d_relevant_cubes, number_relevant_cubes);
 }
 
 void parallel_march_tetra   (Dimensions *dim, dim_t *d_grid, int *cube_decomposition, dim_t threshold,
