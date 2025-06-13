@@ -49,7 +49,11 @@ int main(int argc, char *argv[]) {
 
     printf("Grid dimensions: x = %d, y = %d, z = %d\n", dim.x_dim, dim.y_dim, dim.z_dim);
 
-    load_dim_to_const(&dim);
+    int act_val_vec[25] = {0,1,7,6,0,0,2,5,0,0,0,3,0,6,0,0,4,0,6,0,0,0,0,6,0};
+
+    int pairs[48] = {1,2,1,3,1,4,2,2,1,3,1,4,2,2,3,3,1,4,2,2,3,3,4,4,1,4,2,4,3,3,1,4,2,4,3,4,1,4,2,4,1,3,2,4,2,3,1,3};
+
+    load_to_const(&dim, pairs);
     
     ////////////////////////// MARCH TETRA //////////////////////////
     
@@ -72,10 +76,6 @@ int main(int argc, char *argv[]) {
     printf("Number of relevant cubes: %d\n", number_relevant_cubes);
 
     Triangle_GPU *triangles = NULL;
-
-    int act_val_vec[25] = {0,1,7,6,0,0,2,5,0,0,0,3,0,6,0,0,4,0,6,0,0,0,0,6,0};
-
-    int pairs[48] = {1,2,1,3,1,4,2,2,1,3,1,4,2,2,3,3,1,4,2,2,3,3,4,4,1,4,2,4,3,3,1,4,2,4,3,4,1,4,2,4,1,3,2,4,2,3,1,3};
     
     int total_triangles = 0;
 

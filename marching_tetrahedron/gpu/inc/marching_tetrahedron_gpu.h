@@ -45,4 +45,4 @@ void print_triangles(   Triangle_GPU *d_relevant_cubes, int *number_relevant_cub
 
 void print_relevant_points_soa(cube_gpu_SoA *d_relevant_cubes, int *number_relevant_cubes);
 
-void load_dim_to_const(Dimensions *dim);
+void load_to_const(Dimensions *dimensions, int *pairs);

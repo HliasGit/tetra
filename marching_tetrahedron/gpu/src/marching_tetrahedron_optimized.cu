@@ -2,6 +2,7 @@
 #include <marching_tetrahedron_gpu.cuh>
 
 __constant__ int4 dim;
+__constant__ int c_pairs[48];
 
 __global__ void remove_unnecessary_cubes_SoA_kernel(dim_t* grid, int *counter,
                                                 size_t size, double threshold,
@@ -11,41 +12,59 @@ __global__ void remove_unnecessary_cubes_SoA_kernel(dim_t* grid, int *counter,
 
     if(idx >= size) return;
 
-    int i = idx / (dim.z * dim.y);
+    int i = idx / (dim.y * dim.z);
+    int j = (idx / dim.z) % dim.y;
+    int k = idx % dim.z;
+    
+    extern __shared__ float shared_mem[];
+    float* s_mem_1 = shared_mem;
+    float* s_mem_2 = s_mem_1 + blockDim.x + 1;
+    float* s_mem_3 = s_mem_2 + blockDim.x + 1;
+    float* s_mem_4 = s_mem_3 + blockDim.x + 1;
 
-    int rem = idx % (dim.z * dim.y);
+    bool all_in = 0;
+    bool all_out = 0;
 
-    int j = rem / dim.z;
-    int k = rem % dim.z;
+    if(k != dim.z-1 || j != dim.y-1 || i != dim.x-1){
+        s_mem_1[threadIdx.x] = grid[idx]; //caricato la prima fila
+        if(threadIdx.x == blockDim.x-1){ // ultimo
+            s_mem_1[blockDim.x] = grid[idx + 1]; //caricato ultimo della prima fila
+        }
 
-    bool all_in;
-    bool all_out;
+        s_mem_2[threadIdx.x] = grid[idx + dim.z];
+        if(threadIdx.x == blockDim.x-1){
+            s_mem_2[blockDim.x] = grid[idx + dim.z + 1];
+        }
 
-    if(k == dim.z-1 || j == dim.y-1 || i == dim.x-1){
-        all_in = 0;
-        all_out = 0;
+        s_mem_3[threadIdx.x] = grid[idx + dim.z * dim.y];
+        if(threadIdx.x == blockDim.x-1){
+            s_mem_3[blockDim.x] = grid[idx + dim.z * dim.y + 1];
+        }
 
-    } else {
-        all_out =
-            (grid[idx] < threshold) &&
-            (grid[idx+1] < threshold) &&
-            (grid[idx + dim.z] < threshold) &&
-            (grid[idx + dim.z+1] < threshold) &&
-            (grid[idx + dim.z * dim.y] < threshold) &&
-            (grid[idx + dim.z * dim.y + 1] < threshold) &&
-            (grid[idx + dim.z * dim.y + dim.z] < threshold) &&
-            (grid[idx + dim.z * dim.y + dim.z+1] < threshold);
+        s_mem_4[threadIdx.x] = grid[idx + dim.z * dim.y + dim.z];
+        if(threadIdx.x == blockDim.x-1){
+            s_mem_4[blockDim.x] = grid[idx + dim.z * dim.y + dim.z + 1];
+        }
 
-        all_in =
-            (grid[idx] > threshold) &&
-            (grid[idx+1] > threshold) &&
-            (grid[idx + dim.z] > threshold) &&
-            (grid[idx + dim.z+1] > threshold) &&
-            (grid[idx + dim.z * dim.y] > threshold) &&
-            (grid[idx + dim.z * dim.y + 1] > threshold) &&
-            (grid[idx + dim.z * dim.y + dim.z] > threshold) &&
-            (grid[idx + dim.z * dim.y + dim.z+1] > threshold);
+        __syncthreads();
+            
+        if( s_mem_1[threadIdx.x] > threshold && s_mem_1[threadIdx.x+1] > threshold &&
+            s_mem_2[threadIdx.x] > threshold && s_mem_2[threadIdx.x+1] > threshold &&
+            s_mem_3[threadIdx.x] > threshold && s_mem_3[threadIdx.x+1] > threshold &&
+            s_mem_4[threadIdx.x] > threshold && s_mem_4[threadIdx.x+1] > threshold)
+            {
+            all_out = 1;
+        }
+        if( s_mem_1[threadIdx.x] < threshold && s_mem_1[threadIdx.x+1] < threshold &&
+            s_mem_2[threadIdx.x] < threshold && s_mem_2[threadIdx.x+1] < threshold &&
+            s_mem_3[threadIdx.x] < threshold && s_mem_3[threadIdx.x+1] < threshold &&
+            s_mem_4[threadIdx.x] < threshold && s_mem_4[threadIdx.x+1] < threshold)
+            {
+            all_in = 1;
+        }
     }
+
+    
 
     if (all_out == 0 && all_in == 0){
         int insert_pos = atomicAdd(counter, 1);
@@ -54,13 +73,11 @@ __global__ void remove_unnecessary_cubes_SoA_kernel(dim_t* grid, int *counter,
         d_relevant_cubes->coord_idx[insert_pos].y = j;
         d_relevant_cubes->coord_idx[insert_pos].z = k;
     }
-
 }
 
 __global__ void compute_apex_float4(   dim_t *grid, cube_gpu_SoA *d_relevant_cubes, int number_relevant_cubes,
                                 cube_vertices_points_SoA *d_cube_points_coordinates){
                         
-    const int n = 512;
     float3 one_apex;
     float3 two_apex;
     float3 coord_idx;
@@ -125,6 +142,7 @@ __global__ void compute_march_tetra_SoA(dim_t *d_grid, cube_gpu_SoA *d_relevant_
             return;
         }
 
+    #pragma unroll
     for (int tetra = 0; tetra < 5; tetra++){
 
         cube_vertices_points_SoA *first     = &d_cube_points_coordinates[tid*8+cube_deco[tetra*4+0]-1];
@@ -138,16 +156,16 @@ __global__ void compute_march_tetra_SoA(dim_t *d_grid, cube_gpu_SoA *d_relevant_
         
         count_elements_SoA(&less, &eq, &gre, first, second, third, fourth, threshold);
         
-        int act_val = act_val_vec[less + eq*5];
-        // int act_val2 = get_action_value(less, eq, gre);
+        // int act_val = act_val_vec[less + eq*5];
+        int act_val = get_action_value(less, eq, gre);
         
         if (act_val!= 0){
-            int *use_pairs = &d_pairs[6*(act_val-1)];
+            int *use_pairs = &c_pairs[6*(act_val-1)];
 
             make_triangle_SoA(first, second, third, fourth, &d_triangles[tid*5+tetra], use_pairs);
 
             if(act_val == 7){
-                use_pairs = &d_pairs[42]; // 42 beacuse it's 6*7. 
+                use_pairs = &c_pairs[42]; // 42 beacuse it's 6*7. 
                 int insert_pos = atomicAdd(d_counter, 1);
 
                 make_triangle_SoA(first, second, third, fourth, &d_triangles[number_relevant_cubes*5 + insert_pos], use_pairs);
@@ -184,11 +202,12 @@ __device__ void make_triangle_SoA(  cube_vertices_points_SoA *first, cube_vertic
     triangle->v3.z = ((coord_t)arr[idx1]->val.z + (coord_t)arr[idx2]->val.z) / 2.0;
 }
 
-__device__ void count_elements_SoA( int *less, int *eq, int *gre, cube_vertices_points_SoA *first,
+inline __device__ void count_elements_SoA( int *less, int *eq, int *gre, cube_vertices_points_SoA *first,
                                 cube_vertices_points_SoA *second, cube_vertices_points_SoA *third, cube_vertices_points_SoA *fourth,
                                 dim_t threshold){
 
     cube_vertices_points_SoA* arr[4] = {first, second, third, fourth};
+    #pragma unroll
     for (int i = 0; i < 4; ++i) {
         if (arr[i]->val.w < threshold) {
             (*less)++;
@@ -200,9 +219,10 @@ __device__ void count_elements_SoA( int *less, int *eq, int *gre, cube_vertices_
     }
 }
 
-__device__ void sort_points_SoA(cube_vertices_points_SoA **first, cube_vertices_points_SoA **second, cube_vertices_points_SoA **third, cube_vertices_points_SoA **fourth){
+inline __device__ void sort_points_SoA(cube_vertices_points_SoA **first, cube_vertices_points_SoA **second, cube_vertices_points_SoA **third, cube_vertices_points_SoA **fourth){
 
     cube_vertices_points_SoA* arr[4] = {*first, *second, *third, *fourth};
+    #pragma unroll
     for (int i = 0; i < 3; ++i) {
         for (int j = 0; j < 3 - i; ++j) {
             if (arr[j]->val.w > arr[j + 1]->val.w) {
@@ -226,7 +246,7 @@ void remove_unnecessary_cubes(  dim_t *d_grid, size_t cubes_in_domain, double th
 {
     // //      //      //      // GENERAL INFO KERNEL 1 //      //      //      //
 
-    int n_threads = 512;
+    int n_threads = 1024;
     int n_blocks = (cubes_in_domain + n_threads - 1) / n_threads;
 
     printf("\nLaunching kernel to remove unnecessary cubes\n");
@@ -262,7 +282,7 @@ void remove_unnecessary_cubes(  dim_t *d_grid, size_t cubes_in_domain, double th
     cudaEventCreate(&stop);
     cudaEventRecord(start, 0);
     
-    remove_unnecessary_cubes_SoA_kernel<<<n_blocks, n_threads>>>(   d_grid, d_number_relevant_cubes,
+    remove_unnecessary_cubes_SoA_kernel<<<n_blocks, n_threads, (n_threads + 1) * 4 * sizeof(float)>>>(   d_grid, d_number_relevant_cubes,
                                                                 cubes_in_domain, threshold,
                                                                 *d_relevant_cubes);
     cudaDeviceSynchronize();
@@ -299,7 +319,7 @@ void parallel_march_tetra   (dim_t *d_grid, int *cube_decomposition, dim_t thres
 
     //      //      //      // GENERAL INFO KERNEL APEX //     //      //      //
 
-    int n_threads = 512;
+    int n_threads = 1024;
     int n_blocks = (number_relevant_cubes + n_threads - 1) / n_threads;
     printf("\nLaunching kernel to write apex\n");
     printf("# blocks                            %d \nand # threads                       %d \n", n_blocks, n_threads);
@@ -337,7 +357,7 @@ void parallel_march_tetra   (dim_t *d_grid, int *cube_decomposition, dim_t thres
 
     //      //      //      // GENERAL INFO KERNEL MT //        //      //      //
 
-    n_threads = 512;
+    n_threads = 1024;
     n_blocks = (number_relevant_cubes + n_threads - 1) / n_threads;
     
     printf("\nLaunching kernel to compute MT algo\n");
@@ -431,7 +451,7 @@ void parallel_march_tetra   (dim_t *d_grid, int *cube_decomposition, dim_t thres
     cudaFree(pool_index);
 }
 
-void load_dim_to_const(Dimensions *dimensions){
+void load_to_const(Dimensions *dimensions, int *pairs){
     int4 tmp;
     tmp.x = dimensions->x_dim;
     tmp.y = dimensions->y_dim;
@@ -439,4 +459,6 @@ void load_dim_to_const(Dimensions *dimensions){
 
     tmp.w = 0.0f;
     cudaMemcpyToSymbol(dim, &tmp, sizeof(int4));
+
+    cudaMemcpyToSymbol(c_pairs, pairs, sizeof(int)*48);
 }
