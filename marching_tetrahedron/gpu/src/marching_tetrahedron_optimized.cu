@@ -50,7 +50,6 @@ __global__ void remove_unnecessary_cubes_SoA_kernel(dim_t* grid, int *counter,
     if (all_out == 0 && all_in == 0){
         int insert_pos = atomicAdd(counter, 1);
         d_relevant_cubes->coord_idx[insert_pos].w = idx;
-        // printf("coord_idx[%d].w = %f\n", insert_pos, d_relevant_cubes->coord_idx[insert_pos].w);
         d_relevant_cubes->coord_idx[insert_pos].x = i;
         d_relevant_cubes->coord_idx[insert_pos].y = j;
         d_relevant_cubes->coord_idx[insert_pos].z = k;
@@ -60,6 +59,12 @@ __global__ void remove_unnecessary_cubes_SoA_kernel(dim_t* grid, int *counter,
 
 __global__ void compute_apex_float4(   dim_t *grid, cube_gpu_SoA *d_relevant_cubes, int number_relevant_cubes,
                                 cube_vertices_points_SoA *d_cube_points_coordinates){
+                        
+    const int n = 512;
+    float3 one_apex;
+    float3 two_apex;
+    float3 coord_idx;
+
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
 
     if(tid >= number_relevant_cubes) return;
@@ -70,76 +75,36 @@ __global__ void compute_apex_float4(   dim_t *grid, cube_gpu_SoA *d_relevant_cub
             return;
         }
 
-    // printf("coord_idx[%d].w = %f\n", tid, d_relevant_cubes->coord_idx[tid].w);
+    coord_idx.x = d_relevant_cubes->coord_idx[tid].x;
+    coord_idx.y = d_relevant_cubes->coord_idx[tid].y;
+    coord_idx.z = d_relevant_cubes->coord_idx[tid].z;
+
+    const int lut_one_apex[2] = {0,1};
+
+    one_apex.x = coord_idx.x + lut_one_apex[((int)coord_idx.x) & 1];
+    one_apex.y = coord_idx.y + lut_one_apex[((int)coord_idx.y) & 1];
+    one_apex.z = coord_idx.z + lut_one_apex[((int)coord_idx.z) & 1];
     
-    if (((int)d_relevant_cubes->coord_idx[tid].x & 1) == 0)
-    {
-        d_relevant_cubes->one_apex[tid].x = d_relevant_cubes->coord_idx[tid].x;
-    }
-    else
-    {
-        d_relevant_cubes->one_apex[tid].x = d_relevant_cubes->coord_idx[tid].x + 1;
-    }
-    
-    if (((int)d_relevant_cubes->coord_idx[tid].y & 1) == 0)
-    {
-        d_relevant_cubes->one_apex[tid].y = d_relevant_cubes->coord_idx[tid].y;
-    }
-    else
-    {
-        d_relevant_cubes->one_apex[tid].y = d_relevant_cubes->coord_idx[tid].y + 1;
-    }
-    
-    if (((int)d_relevant_cubes->coord_idx[tid].z & 1) == 0)
-    {
-        d_relevant_cubes->one_apex[tid].z = d_relevant_cubes->coord_idx[tid].z;
-    }
-    else
-    {
-        d_relevant_cubes->one_apex[tid].z = d_relevant_cubes->coord_idx[tid].z + 1;
-    }
-    
-    d_relevant_cubes->two_apex[tid].x = 2 * d_relevant_cubes->coord_idx[tid].x + 1 - d_relevant_cubes->one_apex[tid].x;
-    d_relevant_cubes->two_apex[tid].y = 2 * d_relevant_cubes->coord_idx[tid].y + 1 - d_relevant_cubes->one_apex[tid].y;
-    d_relevant_cubes->two_apex[tid].z = 2 * d_relevant_cubes->coord_idx[tid].z + 1 - d_relevant_cubes->one_apex[tid].z;
+    two_apex.x = 2 * coord_idx.x + 1 - one_apex.x;
+    two_apex.y = 2 * coord_idx.y + 1 - one_apex.y;
+    two_apex.z = 2 * coord_idx.z + 1 - one_apex.z;
 
-    d_cube_points_coordinates[tid * 8 + 0].val.x = d_relevant_cubes->one_apex[tid].x;
-    d_cube_points_coordinates[tid * 8 + 0].val.y = d_relevant_cubes->one_apex[tid].y;
-    d_cube_points_coordinates[tid * 8 + 0].val.z = d_relevant_cubes->one_apex[tid].z;
-
-    d_cube_points_coordinates[tid * 8 + 1].val.x = d_relevant_cubes->two_apex[tid].x;
-    d_cube_points_coordinates[tid * 8 + 1].val.y = d_relevant_cubes->one_apex[tid].y;
-    d_cube_points_coordinates[tid * 8 + 1].val.z = d_relevant_cubes->one_apex[tid].z;
-
-    d_cube_points_coordinates[tid * 8 + 2].val.x = d_relevant_cubes->one_apex[tid].x;
-    d_cube_points_coordinates[tid * 8 + 2].val.y = d_relevant_cubes->two_apex[tid].y;
-    d_cube_points_coordinates[tid * 8 + 2].val.z = d_relevant_cubes->one_apex[tid].z;
-
-    d_cube_points_coordinates[tid * 8 + 3].val.x = d_relevant_cubes->two_apex[tid].x;
-    d_cube_points_coordinates[tid * 8 + 3].val.y = d_relevant_cubes->two_apex[tid].y;
-    d_cube_points_coordinates[tid * 8 + 3].val.z = d_relevant_cubes->one_apex[tid].z;
-
-    d_cube_points_coordinates[tid * 8 + 4].val.x = d_relevant_cubes->one_apex[tid].x;
-    d_cube_points_coordinates[tid * 8 + 4].val.y = d_relevant_cubes->one_apex[tid].y;
-    d_cube_points_coordinates[tid * 8 + 4].val.z = d_relevant_cubes->two_apex[tid].z;
-
-    d_cube_points_coordinates[tid * 8 + 5].val.x = d_relevant_cubes->two_apex[tid].x;
-    d_cube_points_coordinates[tid * 8 + 5].val.y = d_relevant_cubes->one_apex[tid].y;
-    d_cube_points_coordinates[tid * 8 + 5].val.z = d_relevant_cubes->two_apex[tid].z;
-
-    d_cube_points_coordinates[tid * 8 + 6].val.x = d_relevant_cubes->one_apex[tid].x;
-    d_cube_points_coordinates[tid * 8 + 6].val.y = d_relevant_cubes->two_apex[tid].y;
-    d_cube_points_coordinates[tid * 8 + 6].val.z = d_relevant_cubes->two_apex[tid].z;
-
-    d_cube_points_coordinates[tid * 8 + 7].val.x = d_relevant_cubes->two_apex[tid].x;
-    d_cube_points_coordinates[tid * 8 + 7].val.y = d_relevant_cubes->two_apex[tid].y;
-    d_cube_points_coordinates[tid * 8 + 7].val.z = d_relevant_cubes->two_apex[tid].z;
-
+    float4 coords[8];
+    coords[0] = make_float4(one_apex.x, one_apex.y, one_apex.z, 0.0f);
+    coords[1] = make_float4(two_apex.x, one_apex.y, one_apex.z, 0.0f);
+    coords[2] = make_float4(one_apex.x, two_apex.y, one_apex.z, 0.0f);
+    coords[3] = make_float4(two_apex.x, two_apex.y, one_apex.z, 0.0f);
+    coords[4] = make_float4(one_apex.x, one_apex.y, two_apex.z, 0.0f);
+    coords[5] = make_float4(two_apex.x, one_apex.y, two_apex.z, 0.0f);
+    coords[6] = make_float4(one_apex.x, two_apex.y, two_apex.z, 0.0f);
+    coords[7] = make_float4(two_apex.x, two_apex.y, two_apex.z, 0.0f);
     
     for(int v=0; v<8; v++){
-        d_cube_points_coordinates[tid * 8 + v].val.w = grid[(int)(d_cube_points_coordinates[tid * 8 + v].val.z +
-                                                            d_cube_points_coordinates[tid * 8 + v].val.y * dim.z +
-                                                            d_cube_points_coordinates[tid * 8 + v].val.x * dim.z * dim.y)];
+        coords[v].w = grid[(int)(   coords[v].z +
+                                    coords[v].y * dim.z +
+                                    coords[v].x * dim.z * dim.y)];
+        
+        d_cube_points_coordinates[tid * 8 + v].val = coords[v];
     }
 }
 
@@ -372,6 +337,7 @@ void parallel_march_tetra   (dim_t *d_grid, int *cube_decomposition, dim_t thres
 
     //      //      //      // GENERAL INFO KERNEL MT //        //      //      //
 
+    n_threads = 512;
     n_blocks = (number_relevant_cubes + n_threads - 1) / n_threads;
     
     printf("\nLaunching kernel to compute MT algo\n");

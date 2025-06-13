@@ -376,7 +376,7 @@ void remove_unnecessary_cubes(  dim_t *d_grid, size_t cubes_in_domain, double th
     print_cuda_error(cudaGetLastError(), "CUDA error");
     printf("remove_unnecessary_cubes_kernel executed successfully.\n");
 
-    print_relevant_points(*d_relevant_cubes, number_relevant_cubes);
+    // print_relevant_points(*d_relevant_cubes, number_relevant_cubes);
 }
 
 /// @brief Function that given the cubes in the space can compute the tetrahedra and the tre triangles

@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
                             pairs, &triangles, &total_triangles, &time);
  
     printf("Total GPU time: %f ms\n", time);
-    print_triangles(triangles, &total_triangles, molecule_name_original, molecule_path_original);
+    // print_triangles(triangles, &total_triangles, molecule_name_original, molecule_path_original);
 
     free(triangles);
 
