@@ -4,7 +4,7 @@
 int main(){
     FILE *fptr;
 
-    char folder_name[100] = "/home/elia/tesi/tetra/marching_tetrahedron/data/";
+    char folder_name[100] = "/home/fs72740/evaglietti/tetra/marching_tetrahedron/data/float/";
     char *path = strcat(folder_name, "generated.bin");
 
     fptr = fopen(path, "wb");
@@ -13,15 +13,17 @@ int main(){
         printf("null ptr");
     }
 
+    printf("PRINTATO\n");
+
     dim_t dx = 50;
     dim_t dy = 50;
     dim_t dz = 50;
     dim_t origin_x = 50;
     dim_t origin_y = 50;
     dim_t origin_z = 50;
-    size_t x_d = 5;
-    size_t y_d = 2;
-    size_t z_d = 2;
+    size_t x_d = 50;
+    size_t y_d = 20;
+    size_t z_d = 20;
 
     fwrite(&dx, sizeof(dim_t), 1, fptr);
     fwrite(&dy, sizeof(dim_t), 1, fptr);
@@ -38,11 +40,11 @@ int main(){
     for (size_t x=0; x<x_d; x++){
         for (size_t y=0; y<y_d; y++){
             for (size_t z=0; z<z_d; z++){
-                if( (x == 1 || x == 2 /*|| x == 3*/) && 
-                    (y == 1 /*|| y == 2 || y == 3*/) && 
-                    (z == 1 /*|| z == 2 || z == 3*/)){
+                if( (x == 1 || x == 2 || x == 3) && 
+                    (y == 1 || y == 2 || y == 3) && 
+                    (z == 1 || z == 2 || z == 3)){
                     var = 1;
-                    printf("PRINTATO\n");
+                    
                 } else {
                     var = 0;
                 }

@@ -50,7 +50,6 @@ int main(int argc, char *argv[]) {
 
     printf("Grid dimensions: x = %d, y = %d, z = %d\n", dim.x_dim, dim.y_dim, dim.z_dim);
 
-    int act_val_vec[25] = {0,1,7,6,0,0,2,5,0,0,0,3,0,6,0,0,4,0,6,0,0,0,0,6,0};
 
     int pairs[48] = {1,2,1,3,1,4,2,2,1,3,1,4,2,2,3,3,1,4,2,2,3,3,4,4,1,4,2,4,3,3,1,4,2,4,3,4,1,4,2,4,1,3,2,4,2,3,1,3};
 
@@ -69,9 +68,11 @@ int main(int argc, char *argv[]) {
     cube_gpu_SoA *d_relevant_cubes;
     cube_vertices_points_SoA *d_cube_points_coordinates;
 
+    int act_val_vec[25] = {0,1,7,6,0,0,2,5,0,0,0,3,0,6,0,0,4,0,6,0,0,0,0,6,0};
+
     remove_unnecessary_tetrahedra(  d_grid, size, threshold,
                                     &number_relevant_cubes, &d_relevant_cubes, &time,
-                                    CD1, CD2, pairs);
+                                    CD1, CD2, pairs, act_val_vec);
 
     printf("\n");
     printf("Total GPU time: %f ms\n", time);
