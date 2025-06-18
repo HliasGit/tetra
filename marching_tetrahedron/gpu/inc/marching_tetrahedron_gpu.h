@@ -6,6 +6,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "struct_gpu.cuh"
+#include <vector>
+#include <chrono>
+
 
 
 void remove_unnecessary_cubes(  dim_t *d_grid, size_t cubes_in_domain, double threshold,
@@ -46,3 +49,7 @@ void print_triangles(   Triangle_GPU *d_relevant_cubes, int *number_relevant_cub
 void print_relevant_points_soa(cube_gpu_SoA *d_relevant_cubes, int *number_relevant_cubes);
 
 void load_to_const(Dimensions *dimensions, int *pairs);
+
+void print_EC(Triangle_GPU *triangles, int total_triangles);
+
+void read_file(const char* file_name, Dimensions *dim, dim_t **tensor, dim_t *origin);

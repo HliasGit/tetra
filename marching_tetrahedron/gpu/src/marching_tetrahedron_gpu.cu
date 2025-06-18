@@ -240,7 +240,7 @@ __device__ void make_triangle(  cube_vertices_points *first, cube_vertices_point
     triangle->v3.z = ((coord_t)arr[idx1]->coord.z + (coord_t)arr[idx2]->coord.z) / 2.0;
 }
 
-__device__ int get_action_value( int less, int eq, int gre){
+__device__ int get_action_value(int less, int eq, int gre){
     
     if (less == 0 || (less == 2 && eq == 2) || (less == 3 && eq == 1) || less == 4)
     {
@@ -589,4 +589,42 @@ void skip_preprocessing(  size_t cubes_in_domain,
     // Take the potential error
     print_cuda_error(cudaGetLastError(), "CUDA error");
     printf("remove_unnecessary_cubes_kernel executed successfully.\n");
+}
+
+void read_file(const char* file_name, Dimensions *dim, dim_t **tensor, dim_t *origin){
+
+    FILE *fptr;
+    fptr = fopen(file_name, "rb"); 
+
+    if(fptr == NULL) {
+        fprintf(stderr, "Not able to open the file\n");
+        exit(-1);
+    }
+
+    dim_t dx;
+    dim_t dy;
+    dim_t dz;
+    
+    fread(&(dx), sizeof(dim_t), 1, fptr);
+    fread(&(dy), sizeof(dim_t), 1, fptr);
+    fread(&(dz), sizeof(dim_t), 1, fptr);
+    fread(&(origin[0]), sizeof(dim_t), 1, fptr);
+    fread(&(origin[1]), sizeof(dim_t), 1, fptr);
+    fread(&(origin[2]), sizeof(dim_t), 1, fptr);
+    fread(&(dim->x_dim), sizeof(size_t), 1, fptr);
+    fread(&(dim->y_dim), sizeof(size_t), 1, fptr);
+    fread(&(dim->z_dim), sizeof(size_t), 1, fptr);
+
+    *tensor = (dim_t*)malloc(sizeof(dim_t)*dim->x_dim*dim->y_dim*dim->z_dim);
+    
+    for (int i=0; i<dim->x_dim; i++){
+        for (int j=0; j<dim->y_dim; j++){
+            for (int k=0; k<dim->z_dim; k++){
+                fread(&(*tensor)[k + j*dim->z_dim + i*dim->y_dim*dim->z_dim], sizeof(dim_t), 1, fptr);
+                // verbose_print("%f\n", (*tensor)[i + dim->x_dim*j + k + dim->x_dim*dim->y_dim]);
+            }
+        }
+    }
+
+    fclose(fptr);
 }

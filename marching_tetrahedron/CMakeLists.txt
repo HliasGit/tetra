@@ -14,6 +14,8 @@ set(CMAKE_CUDA_STANDARD_REQUIRED True)
 
 option(VERBOSE "Enable verbose mode")
 
+set(VERBOSE OFF)
+
 # ====== Set the build type ======
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
@@ -36,13 +38,11 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Building in debug mode")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -g -G -cudart=shared")
 
 elseif(CMAKE_BUILD_TYPE STREQUAL "Profile")
     message(STATUS "Building in profile mode")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -g")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -g")
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 -g")
 
 else()
     message(STATUS "Building in release mode")
@@ -52,8 +52,9 @@ endif()
 
 add_subdirectory(common)
 
+add_subdirectory(gpu)
 add_subdirectory(cpu)
+
+add_subdirectory(test_gpu)
 add_subdirectory(test_cpu)
 
-add_subdirectory(gpu)
-add_subdirectory(test_gpu)

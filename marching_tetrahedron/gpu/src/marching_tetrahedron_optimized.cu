@@ -462,3 +462,25 @@ void load_to_const(Dimensions *dimensions, int *pairs){
 
     cudaMemcpyToSymbol(c_pairs, pairs, sizeof(int)*48);
 }
+
+void print_EC(Triangle_GPU *triangles, int total_triangles){ //TODO: FINIRE
+    // process triangle vertices in a C++ list
+    std::unordered_set<TriangleVertex_GPU> vertices_list;
+
+    // Timing vertex processing using standard C++ chrono (serial code)
+    auto vertex_start = std::chrono::high_resolution_clock::now();
+
+    for(int t=0; t<total_triangles; t++){
+        if (t % 100000 == 0) {
+            printf("\rProcessed %d / %d triangles", t, total_triangles);
+            fflush(stdout);
+        }
+        vertices_list.insert(triangles[t].v1);
+        vertices_list.insert(triangles[t].v2);
+        vertices_list.insert(triangles[t].v3);
+    }
+
+    auto vertex_end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> vertex_time = vertex_end - vertex_start;
+    printf("\nVertex processing time: %f ms\n", vertex_time.count());
+}

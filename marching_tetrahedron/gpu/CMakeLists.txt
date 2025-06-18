@@ -1,27 +1,38 @@
-file(GLOB_RECURSE TETRA_SOURCES src/*.c)
+find_package(CUDAToolkit REQUIRED)
+
 file(GLOB_RECURSE TETRA_SOURCES_CUDA src/*.cu)
-list(APPEND TETRA_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../common/utils.c)
 
-add_library(TETRA_GPU SHARED ${TETRA_SOURCES} ${TETRA_SOURCES_CUDA})
+add_library(TETRA_GPU SHARED ${TETRA_SOURCES_CUDA})
 
-set(CMAKE_CUDA_ARCHITECTURES Native)  # Compiles for host GPU
+get_target_property(CUDART_PATH CUDA::cudart IMPORTED_LOCATION)
+get_filename_component(CUDART_DIR "${CUDART_PATH}" DIRECTORY)
 
 set_target_properties(TETRA_GPU PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
-    C_STANDARD 11
+    CUDA_RESOLVE_DEVICE_SYMBOLS ON
     POSITION_INDEPENDENT_CODE ON
+    CUDA_ARCHITECTURES 86
+    CUDA_PROPAGATE_HOST_FLAGS OFF
 )
+
+set_target_properties(TETRA_GPU PROPERTIES
+    BUILD_WITH_INSTALL_RPATH TRUE
+    INSTALL_RPATH "${CUDART_DIR}"
+    BUILD_RPATH "${CUDART_DIR}"
+)
+
+
+target_compile_options(TETRA_GPU PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:-G -g>)
+
+target_link_libraries(TETRA_GPU PRIVATE CUDA::cudart)
+
 
 target_include_directories(TETRA_GPU PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../common
 )
 
-target_link_libraries(TETRA_GPU PRIVATE
-    ${CUDA_LIBRARIES}
-    COMMON
-)
 
 if(VERBOSE)
-    target_compile_definitions(TETRA_GPU PRIVATE VERBOSE)
+    target_compile_definitions(TETRA_GPU PUBLIC VERBOSE)
 endif()

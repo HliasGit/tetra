@@ -1,10 +1,7 @@
-#include <marching_tetrahedron_gpu.h>
-#include <stdio.h>
-
+#include "marching_tetrahedron_gpu.h"
 #include "global.h"
 #include "triangles.h"
 #include "utils.h"
-#include "marching_tetrahedron.h"
 
 int main(int argc, char *argv[]) {
 
@@ -89,6 +86,39 @@ int main(int argc, char *argv[]) {
     printf("Total GPU time: %f ms\n", time);
 
     // print_triangles(triangles, &total_triangles, molecule_name_original, molecule_path_original);
+
+    // print_EC(triangles, total_triangles);
+
+    // printf("VOLUME:\n");
+
+
+    // float result = 0;
+    // for(int idx = 0; idx < total_triangles; idx++){
+    //     float percent = 100.0f * idx / total_triangles;
+    //     printf("Progress: %.2f%%\r", percent);
+    //     fflush(stdout);
+    //     float3 a;
+    //     a.x = triangles[idx].v2.x;
+    //     a.y = triangles[idx].v2.y;
+    //     a.z = triangles[idx].v2.z;
+    //     float3 b;
+    //     b.x = triangles[idx].v3.x;
+    //     b.y = triangles[idx].v3.y;
+    //     b.z = triangles[idx].v3.z;
+    //     float3 cross;
+    //     cross.x = a.y * b.z - a.z * b.y;
+    //     cross.y = a.z * b.x - a.x * b.z;
+    //     cross.z = a.x * b.y - a.y * b.x;
+
+    //     float dot = triangles[idx].v1.x * cross.x +
+    //             triangles[idx].v1.y * cross.y +
+    //             triangles[idx].v1.z * cross.z;
+    //     result += dot;
+    // }
+
+    // result /= 6;
+
+    // printf("Volume result: %f\n", result);
     
     free(triangles);
 

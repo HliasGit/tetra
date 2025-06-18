@@ -4,7 +4,6 @@
 #include "global.h"
 #include "triangles.h"
 #include "utils.h"
-#include "marching_tetrahedron.h"
 
 int main(int argc, char *argv[]) {
 

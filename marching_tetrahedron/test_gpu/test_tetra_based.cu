@@ -1,9 +1,10 @@
-#include <marching_tetrahedron_gpu.h>
 #include <stdio.h>
 
+#include "mt_tetra_based.h"
 #include "global.h"
-#include "triangles.h"
-#include "utils.h"
+
+#include "marching_tetrahedron_gpu.h"
+
 
 int main(int argc, char *argv[]) {
 
@@ -40,48 +41,40 @@ int main(int argc, char *argv[]) {
 
     dim_t origin[3];
     
+    double time = 0;
     
-    int cube_decomposition[20] = {4,6,7,8,1,5,6,7,1,3,4,7,1,2,4,6,1,4,6,7};
+    int CD1[20] = {4,6,7,8,1,5,6,7,1,3,4,7,1,2,4,6,1,4,6,7};
+    int CD2[20] = {1,2,5,3,3,5,7,8,2,3,4,8,2,4,5,8,2,3,5,8};
     
     read_file(path, &dim, &grid, origin);
 
     printf("Grid dimensions: x = %d, y = %d, z = %d\n", dim.x_dim, dim.y_dim, dim.z_dim);
+
+    int act_val_vec[25] = {0,1,7,6,0,0,2,5,0,0,0,3,0,6,0,0,4,0,6,0,0,0,0,6,0};
+
+    int pairs[48] = {1,2,1,3,1,4,2,2,1,3,1,4,2,2,3,3,1,4,2,2,3,3,4,4,1,4,2,4,3,3,1,4,2,4,3,4,1,4,2,4,1,3,2,4,2,3,1,3};
+
+    load_to_const_tetra(&dim);
     
     ////////////////////////// MARCH TETRA //////////////////////////
     
     size_t size = dim.x_dim * dim.y_dim * dim.z_dim;
+    printf("Total grid size: %zu\n", size);
     
     dim_t *d_grid;
 
     allocate_d_grid(&d_grid, grid, size);
 
-    cube_gpu *d_relevant_cubes;
-    cube_vertices_points *d_cube_points_coordinates;
+    int number_relevant_cubes;
+    cube_gpu_SoA *d_relevant_cubes;
+    cube_vertices_points_SoA *d_cube_points_coordinates;
 
-    double time = 0.0;
-
-    skip_preprocessing(   size, &dim, &d_relevant_cubes, &time);
+    remove_unnecessary_tetrahedra(  d_grid, size, threshold,
+                                    &number_relevant_cubes, &d_relevant_cubes, &time,
+                                    CD1, CD2, pairs);
 
     printf("\n");
-
-    printf("Number of processed cubes: %d\n", size);
-
-    Triangle_GPU *triangles = NULL;
-
-    int act_val_vec[25] = {0,1,7,6,0,0,2,5,0,0,0,3,0,6,0,0,4,0,6,0,0,0,0,6,0};
-
-    int pairs[48] = {1,2,1,3,1,4,2,2,1,3,1,4,2,2,3,3,1,4,2,2,3,3,4,4,1,4,2,4,3,3,1,4,2,4,3,4,1,4,2,4,1,3,2,4,2,3,1,3};
-    
-    int total_triangles = 0;
-
-    parallel_march_tetra(   &dim, d_grid, cube_decomposition, threshold, size, 
-                            &d_relevant_cubes, &d_cube_points_coordinates, act_val_vec,
-                            pairs, &triangles, &total_triangles, &time);
- 
     printf("Total GPU time: %f ms\n", time);
-    // print_triangles(triangles, &total_triangles, molecule_name_original, molecule_path_original);
-
-    free(triangles);
 
 
     return 0;
