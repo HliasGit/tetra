@@ -7,6 +7,7 @@
 
 __constant__ int4 c_dim;
 
+//TODO MAKE THIS PER CUBE
 __global__ void manage_tetra(int n_tetra, float threshold, float *d_grid, float4 *d_results, int *d_CD1, int *d_CD2, int* d_counter){
     // check that you're in the grid
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -74,12 +75,12 @@ __global__ void manage_tetra(int n_tetra, float threshold, float *d_grid, float4
     two_apex.y = 2 * cube_j + 1 - one_apex.y;
     two_apex.z = 2 * cube_k + 1 - one_apex.z;
     
-    // int ins_pos = atomicAdd(d_counter, 1);
+    float val[4];
+    float4 coords[8];
     
     for (int i = 0; i < 4; i++) {
         int cd_idx = CD[offset_CD + i] - 1;
         
-        float4 coords[8];
         coords[0].x = one_apex.x;  coords[0].y = one_apex.y;  coords[0].z = one_apex.z;  coords[0].w = 0.0f;
         coords[1].x = two_apex.x;  coords[1].y = one_apex.y;  coords[1].z = one_apex.z;  coords[1].w = 0.0f;
         coords[2].x = one_apex.x;  coords[2].y = two_apex.y;  coords[2].z = one_apex.z;  coords[2].w = 0.0f;
@@ -89,10 +90,24 @@ __global__ void manage_tetra(int n_tetra, float threshold, float *d_grid, float4
         coords[6].x = one_apex.x;  coords[6].y = two_apex.y;  coords[6].z = two_apex.z;  coords[6].w = 0.0f;
         coords[7].x = two_apex.x;  coords[7].y = two_apex.y;  coords[7].z = two_apex.z;  coords[7].w = 0.0f;
         
-        d_results[tid * 4 + i].x = coords[cd_idx].x;
-        d_results[tid * 4 + i].y = coords[cd_idx].y;
-        d_results[tid * 4 + i].z = coords[cd_idx].z;
-        d_results[tid * 4 + i].w = d_grid[(int)(coords[cd_idx].z + coords[cd_idx].y * c_dim.z +
+        val[i] = d_grid[(int)(coords[cd_idx].z + coords[cd_idx].y * c_dim.z +
+            coords[cd_idx].x * c_dim.z * c_dim.y)];
+    }
+    
+    bool skip = (val[0] < threshold && val[1] < threshold && val[2] < threshold && val[3] < threshold) ||
+    (val[0] > threshold && val[1] > threshold && val[2] > threshold && val[3] > threshold);
+    
+    if (skip) return;
+
+    int ins_pos = atomicAdd(d_counter, 1);
+    
+    for (int i = 0; i < 4; i++) {
+        int cd_idx = CD[offset_CD + i] - 1;
+        
+        d_results[ins_pos * 4 + i].x = coords[cd_idx].x;
+        d_results[ins_pos * 4 + i].y = coords[cd_idx].y;
+        d_results[ins_pos * 4 + i].z = coords[cd_idx].z;
+        d_results[ins_pos * 4 + i].w = d_grid[(int)(coords[cd_idx].z + coords[cd_idx].y * c_dim.z +
                  coords[cd_idx].x * c_dim.z * c_dim.y)];
     }
 }
@@ -143,12 +158,13 @@ __global__ void make_triangles( int n_tetra, int *d_counter, float4 *d_results, 
             int ins_pos = atomicAdd(d_counter, 1);
             make_triangle_from_tetra(points[0], points[1], points[2], points[3], &d_triangles[ins_pos], use_pairs);
             
-            atomicAdd(d_7val, 1);
+            // atomicAdd(d_7val, 1);
         }
-    } else {
-        // printf("SHOULDNT BE HERE\n");
-        atomicAdd(d_0val, 1);
     }
+    // } else {
+    //     // printf("SHOULDNT BE HERE\n");
+    //     // atomicAdd(d_0val, 1);
+    // }
 }
 
 __device__ void make_triangle_from_tetra(float4 *point1, float4 *point2, float4 *point3, float4 *point4,
@@ -309,12 +325,14 @@ void remove_unnecessary_tetrahedra( dim_t *d_grid, size_t cubes_in_domain, doubl
     
     /////////////// KERNEL TO MAKE THE TRIANGLES ///////////////
 
-    n_tetra = cubes_in_domain*5;
+    n_tetra = *d_counter;
     n_threads = 512;
     n_blocks = (n_tetra + n_threads - 1) / n_threads;
 
     Triangle_GPU *d_triangles;
-    print_cuda_error(cudaMallocManaged(&d_triangles, sizeof(Triangle_GPU) * 1000000), "d_triangles malloc managed");
+    print_cuda_error(cudaMallocManaged(&d_triangles, sizeof(Triangle_GPU) * (*d_counter)*2), "d_triangles malloc managed");
+
+    *d_counter = 0;
 
     // Take start time for triangle kernel
     cudaEvent_t tri_start, tri_stop;
@@ -337,8 +355,7 @@ void remove_unnecessary_tetrahedra( dim_t *d_grid, size_t cubes_in_domain, doubl
 
     printf("Triangle kernel time: %.3f ms\n", tri_elapsedTime);
 
-    printf("Total # of triangles:                           %d\n", *d_counter);
-    printf("0val number - 7val number /total_processed:     %d/%d\n", (*d_0val-*d_7val), n_tetra);
+    printf("Total # of triangles:                           %d\n", n_tetra);
 
     cudaError_t last_err = cudaGetLastError();
     if (last_err != cudaSuccess) {
@@ -347,34 +364,34 @@ void remove_unnecessary_tetrahedra( dim_t *d_grid, size_t cubes_in_domain, doubl
 
     // WRITE TO FILE THE TRIANGLES
     int final_triangles_number = *d_counter;
-    int local_counter  = 0;
+    // int local_counter  = 0;
     
-    FILE *fp_tri = fopen("triangle.pdb", "w");
-    if (!fp_tri) {
-        printf("Failed to open triangle.pdb for writing\n");
-    } else {
-        for (int i = 0; i < final_triangles_number; ++i) {
+    // FILE *fp_tri = fopen("triangle.pdb", "w");
+    // if (!fp_tri) {
+    //     printf("Failed to open triangle.pdb for writing\n");
+    // } else {
+    //     for (int i = 0; i < final_triangles_number; ++i) {
 
-            int id1 = local_counter * 3 + 1;
-            int id2 = local_counter * 3 + 2;
-            int id3 = local_counter * 3 + 3;
+    //         int id1 = local_counter * 3 + 1;
+    //         int id2 = local_counter * 3 + 2;
+    //         int id3 = local_counter * 3 + 3;
 
-            fprintf(fp_tri, "ATOM  %5d C    PSE A   1    %8.2f%8.2f%8.2f 1.00  1.00           C\n",
-                    id1, d_triangles[i].v1.x, d_triangles[i].v1.y, d_triangles[i].v1.z);
-            fprintf(fp_tri, "ATOM  %5d C    PSE A   1    %8.2f%8.2f%8.2f 1.00  1.00           C\n",
-                    id2, d_triangles[i].v2.x, d_triangles[i].v2.y, d_triangles[i].v2.z);
-            fprintf(fp_tri, "ATOM  %5d C    PSE A   1    %8.2f%8.2f%8.2f 1.00  1.00           C\n",
-                    id3, d_triangles[i].v3.x, d_triangles[i].v3.y, d_triangles[i].v3.z);
+    //         fprintf(fp_tri, "ATOM  %5d C    PSE A   1    %8.2f%8.2f%8.2f 1.00  1.00           C\n",
+    //                 id1, d_triangles[i].v1.x, d_triangles[i].v1.y, d_triangles[i].v1.z);
+    //         fprintf(fp_tri, "ATOM  %5d C    PSE A   1    %8.2f%8.2f%8.2f 1.00  1.00           C\n",
+    //                 id2, d_triangles[i].v2.x, d_triangles[i].v2.y, d_triangles[i].v2.z);
+    //         fprintf(fp_tri, "ATOM  %5d C    PSE A   1    %8.2f%8.2f%8.2f 1.00  1.00           C\n",
+    //                 id3, d_triangles[i].v3.x, d_triangles[i].v3.y, d_triangles[i].v3.z);
 
-            fprintf(fp_tri, "CONECT%5d%5d\n", id1, id2);
-            fprintf(fp_tri, "CONECT%5d%5d\n", id2, id3);
-            fprintf(fp_tri, "CONECT%5d%5d\n", id1, id3);
+    //         fprintf(fp_tri, "CONECT%5d%5d\n", id1, id2);
+    //         fprintf(fp_tri, "CONECT%5d%5d\n", id2, id3);
+    //         fprintf(fp_tri, "CONECT%5d%5d\n", id1, id3);
 
-            local_counter++;
-        }
-        fclose(fp_tri);
-        printf("Wrote %d triangles to triangle.pdb\n", final_triangles_number);
-    }
+    //         local_counter++;
+    //     }
+    //     fclose(fp_tri);
+    // }
+    printf("Wrote %d triangles to triangle.pdb\n", final_triangles_number);
 
     *time = tri_elapsedTime + elapsedTime;
 }
