@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
 
         auto add_edge = [&edge_count, &counter](int a, int b) {
             if (a > b) std::swap(a, b);
-            int coupled = a * 1000000 + b;
+            int coupled = a * 100000000 + b;
             if (edge_count.find(coupled) == edge_count.end()) {
                 edge_count[coupled] = 1;
                 counter++;

@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 
     Dimensions dim;
 
-    char molecule_path[100] = "/home/fs72740/evaglietti/tetra/marching_tetrahedron/data/";
+    char molecule_path[100] = "/home/fs72740/evaglietti/tetra/marching_tetrahedron/data/float/";
     char molecule_name[100];
     char molecule_name_original[100];
     char molecule_path_original[100];

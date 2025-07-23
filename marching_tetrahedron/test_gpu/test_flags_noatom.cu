@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 #include "marching_tetrahedron_gpu.h"
-#include "mt_tetra_based.h"
+#include "mt_noatom.h"
 #include "global.h"
 
 #include <vector_types.h>
@@ -45,40 +45,43 @@ int main(int argc, char *argv[]) {
     float time = 0;
     
     int CD1[20] = {4,6,7,8,1,5,6,7,1,3,4,7,1,2,4,6,1,4,6,7};
-    int CD2[20] = {1,2,5,3,3,5,7,8,2,3,4,8,2,4,5,8,2,3,5,8};
+    int act_val_vec[25] = {0,1,7,6,0,0,2,5,0,0,0,3,0,6,0,0,4,0,6,0,0,0,0,6,0};
+    int pairs[48] = {1,2,1,3,1,4,2,2,1,3,1,4,2,2,3,3,1,4,2,2,3,3,4,4,1,4,2,4,3,3,1,4,2,4,3,4,1,4,2,4,1,3,2,4,2,3,1,3};
     
     read_file(path, &dim, &grid, origin);
 
     printf("Grid dimensions: x = %d, y = %d, z = %d\n", dim.x_dim, dim.y_dim, dim.z_dim);
 
-
-    int pairs[48] = {1,2,1,3,1,4,2,2,1,3,1,4,2,2,3,3,1,4,2,2,3,3,4,4,1,4,2,4,3,3,1,4,2,4,3,4,1,4,2,4,1,3,2,4,2,3,1,3};
-
-    load_to_const_tetra(&dim);
+    load_to_const_tetra_flags(&dim);
     
-    ////////////////////////// MARCH TETRA //////////////////////////
+    //////////////////////// MARCH TETRA //////////////////////////
     
     size_t cubes_in_domain = dim.x_dim * dim.y_dim * dim.z_dim;
     printf("Total grid cubes_in_domain: %zu\n", cubes_in_domain);
     
     dim_t *d_grid;
+    bool *d_flags;
+    cube_gpu_SoA *d_relevant_cubes;
 
     allocate_d_grid(&d_grid, grid, cubes_in_domain);
+    allocate_d_flags(&d_flags, cubes_in_domain);
 
-    float4 *d_active_tetrahedra;
-    int *d_num_active_tetrahedra;
+    remove_unnecessary_cubes_flag(   d_grid,
+                                d_flags,
+                                cubes_in_domain,
+                                threshold,
+                                &d_relevant_cubes,
+                                &time);
 
-    int act_val_vec[25] = {0,1,7,6,0,0,2,5,0,0,0,3,0,6,0,0,4,0,6,0,0,0,0,6,0};
+    // // remove_unnecessary_tetrahedra(  d_grid,
+    // //                                 cubes_in_domain,
+    // //                                 CD1,
+    // //                                 threshold,
+    // //                                 &d_active_tetrahedra, 
+    // //                                 &d_num_active_tetrahedra,
+    // //                                 &time);
 
-    remove_unnecessary_tetrahedra(  d_grid,
-                                    cubes_in_domain,
-                                    CD1,
-                                    threshold,
-                                    &d_active_tetrahedra, 
-                                    &d_num_active_tetrahedra,
-                                    &time);
-
-    tetra_mt(d_num_active_tetrahedra, d_active_tetrahedra, threshold, pairs, act_val_vec, &time);
+    // tetra_mt(d_num_active_tetrahedra, d_active_tetrahedra, threshold, pairs, act_val_vec, &time);
 
     printf("\n");
     printf("Total GPU time: %f ms\n", time);

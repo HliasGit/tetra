@@ -25,7 +25,7 @@ __global__ void remove_unnecessary_cubes_SoA_kernel(dim_t* grid, int *counter,
     bool all_in = 0;
     bool all_out = 0;
 
-    if(k != dim.z-1 || j != dim.y-1 || i != dim.x-1){
+    if(k != dim.z || j != dim.y || i != dim.x){
         s_mem_1[threadIdx.x] = grid[idx]; //caricato la prima fila
         if(threadIdx.x == blockDim.x-1){ // ultimo
             s_mem_1[blockDim.x] = grid[idx + 1]; //caricato ultimo della prima fila

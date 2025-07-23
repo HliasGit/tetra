@@ -42,47 +42,56 @@ int main(int argc, char *argv[]) {
 
     dim_t origin[3];
     
-    float time = 0;
+    double time = 0;
     
-    int CD1[20] = {4,6,7,8,1,5,6,7,1,3,4,7,1,2,4,6,1,4,6,7};
-    int CD2[20] = {1,2,5,3,3,5,7,8,2,3,4,8,2,4,5,8,2,3,5,8};
+    int cube_decomposition[20] = {4,6,7,8,1,5,6,7,1,3,4,7,1,2,4,6,1,4,6,7};
     
     read_file(path, &dim, &grid, origin);
 
     printf("Grid dimensions: x = %d, y = %d, z = %d\n", dim.x_dim, dim.y_dim, dim.z_dim);
 
+    int act_val_vec[25] = {0,1,7,6,0,0,2,5,0,0,0,3,0,6,0,0,4,0,6,0,0,0,0,6,0};
 
     int pairs[48] = {1,2,1,3,1,4,2,2,1,3,1,4,2,2,3,3,1,4,2,2,3,3,4,4,1,4,2,4,3,3,1,4,2,4,3,4,1,4,2,4,1,3,2,4,2,3,1,3};
 
-    load_to_const_tetra(&dim);
+    load_to_const(&dim, pairs);
     
     ////////////////////////// MARCH TETRA //////////////////////////
     
-    size_t cubes_in_domain = dim.x_dim * dim.y_dim * dim.z_dim;
-    printf("Total grid cubes_in_domain: %zu\n", cubes_in_domain);
+    size_t size = dim.x_dim * dim.y_dim * dim.z_dim;
     
     dim_t *d_grid;
 
-    allocate_d_grid(&d_grid, grid, cubes_in_domain);
+    allocate_d_grid(&d_grid, grid, size);
 
+    int number_relevant_cubes;
+    cube_gpu_SoA *d_relevant_cubes;
     float4 *d_active_tetrahedra;
-    int *d_num_active_tetrahedra;
+    Triangle_GPU *triangles;
+    int total_triangles;
 
-    int act_val_vec[25] = {0,1,7,6,0,0,2,5,0,0,0,3,0,6,0,0,4,0,6,0,0,0,0,6,0};
-
-    remove_unnecessary_tetrahedra(  d_grid,
-                                    cubes_in_domain,
-                                    CD1,
-                                    threshold,
-                                    &d_active_tetrahedra, 
-                                    &d_num_active_tetrahedra,
+    remove_unnecessary_cubes( d_grid,
+                                    size, threshold,
+                                    &number_relevant_cubes,
+                                    &d_relevant_cubes,
                                     &time);
 
-    tetra_mt(d_num_active_tetrahedra, d_active_tetrahedra, threshold, pairs, act_val_vec, &time);
+    parallel_march_tetra_mixed( d_grid,
+                                cube_decomposition,
+                                threshold,
+                                number_relevant_cubes, 
+                                d_relevant_cubes,
+                                d_active_tetrahedra,
+                                act_val_vec,
+                                pairs,
+                                &triangles,
+                                &total_triangles,
+                                &time);
+    
 
     printf("\n");
     printf("Total GPU time: %f ms\n", time);
 
 
     return 0;
-}
+} 
